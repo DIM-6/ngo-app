@@ -129,19 +129,26 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 PERFECT RESPONSIVE & CLICKABLE MOBILE/DESKTOP STYLING
+# 🎨 PERFECT CSS FOR TIGHT HEADER & MOBILE TOUCH FIX
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    p, label, input, button, h1, h2, h3, h4, .stMarkdown, .stSelectbox, .stRadio, .stCheckbox {
-        font-family: 'Noto Sans Gujarati', sans-serif !important;
+    .stApp {
+        background-color: #FFFFFF !important;
+        color: #111827 !important;
     }
 
-    /* 🔠 Auto Capitalize text inputs */
+    p, label, input, button, h1, h2, h3, h4, .stMarkdown, .stSelectbox, .stRadio, .stCheckbox {
+        font-family: 'Noto Sans Gujarati', sans-serif !important;
+        color: #111827 !important;
+    }
+
     input[type="text"] {
         text-transform: uppercase !important;
+        background-color: #F9FAFB !important;
+        color: #111827 !important;
     }
 
     footer, #MainMenu {
@@ -151,71 +158,79 @@ st.markdown(
     .main .block-container {
         max-width: 650px !important;
         margin: 0 auto !important;
-        padding-top: 1rem !important;
+        padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
-        padding-left: 0.6rem !important;
-        padding-right: 0.6rem !important;
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
     }
 
-    /* 📱 Header Side-by-Side Flex Layout (Mobile & Desktop) */
-    .header-flex-box {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 12px !important;
-        width: 100% !important;
-        margin-bottom: 10px !important;
+    /* 📱 Compact Header Style (Zero Unwanted Gap) */
+    .ngo-title-1 {
+        color: #16A34A !important;
+        font-size: 22px !important;
+        font-weight: 900 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1.1 !important;
+        letter-spacing: 1px !important;
     }
-
-    .header-logo-img {
-        height: 75px !important;
-        width: auto !important;
-        object-fit: contain !important;
-        flex-shrink: 0 !important;
+    .ngo-title-2 {
+        color: #0284C7 !important;
+        font-size: 17px !important;
+        font-weight: 800 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1.1 !important;
+        letter-spacing: 1px !important;
     }
-
-    .header-title-box {
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        line-height: 1.15 !important;
-        text-align: left !important;
+    .ngo-title-3 {
+        color: #1E3A8A !important;
+        font-size: 17px !important;
+        font-weight: 800 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1.1 !important;
+        letter-spacing: 1px !important;
     }
-
-    .h-l1 { color: #16A34A !important; margin: 0 !important; font-size: 20px !important; font-weight: 900 !important; letter-spacing: 1px !important; }
-    .h-l2 { color: #0284C7 !important; margin: 0 !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: 1px !important; }
-    .h-l3 { color: #1E3A8A !important; margin: 0 !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: 1px !important; }
-    .h-reg { color: #4B5563 !important; margin: 2px 0 0 0 !important; font-size: 10.5px !important; font-weight: 700 !important; }
-
-    /* 🎯 Fix Desktop Mode Checkbox Click Issue */
-    .stCheckbox {
-        pointer-events: auto !important;
-        cursor: pointer !important;
-    }
-    .stCheckbox label {
-        cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        user-select: none !important;
+    .ngo-reg {
+        color: #4B5563 !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        margin: 2px 0 0 0 !important;
+        padding: 0 !important;
     }
 
     @media (max-width: 768px) {
-        .h-l1 { font-size: 16px !important; }
-        .h-l2 { font-size: 13.5px !important; }
-        .h-l3 { font-size: 13.5px !important; }
-        .h-reg { font-size: 9.5px !important; }
-        .header-logo-img { height: 60px !important; }
+        .main .block-container {
+            max-width: 100% !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
 
-        /* Keep Checkbox columns side-by-side on mobile */
+        .header-container {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 6px !important;
+        }
+
+        .ngo-title-1 { font-size: 20px !important; }
+        .ngo-title-2 { font-size: 16px !important; }
+        .ngo-title-3 { font-size: 16px !important; }
+
+        /* Keep Checkboxes side by side & fully clickable even in Desktop mode */
         [data-testid="column"] {
             width: 50% !important;
             flex: 1 1 50% !important;
             min-width: 45% !important;
         }
 
+        .stCheckbox {
+            pointer-events: auto !important;
+        }
         .stCheckbox label {
-            font-size: 13px !important;
+            font-size: 13.5px !important;
+            padding: 4px 0 !important;
         }
 
         .stButton button {
@@ -350,10 +365,7 @@ def render_html_receipt(booking_info):
         <title>{pdf_file_name}</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
-            
-            * {{
-                box-sizing: border-box;
-            }}
+            * {{ box-sizing: border-box; }}
             body {{
                 font-family: 'Noto Sans Gujarati', Arial, sans-serif;
                 background-color: #ffffff;
@@ -380,51 +392,19 @@ def render_html_receipt(booking_info):
                 padding-bottom: 6px;
                 margin-bottom: 8px;
             }}
-            .logo-box {{
-                flex-shrink: 0;
-            }}
-            .receipt-logo {{
-                height: 60px;
-                width: auto;
-            }}
+            .receipt-logo {{ height: 60px; width: auto; }}
             .title-box {{
                 text-align: left;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
-                line-height: 1.15;
+                line-height: 1.1;
             }}
-            .title-l1 {{
-                color: #16A34A;
-                font-size: 14px;
-                font-weight: 900;
-                letter-spacing: 1px;
-            }}
-            .title-l2 {{
-                color: #0284C7;
-                font-size: 12px;
-                font-weight: 800;
-                letter-spacing: 1px;
-            }}
-            .title-l3 {{
-                color: #1E3A8A;
-                font-size: 12px;
-                font-weight: 800;
-                letter-spacing: 1px;
-            }}
-            .reg-no {{
-                color: #4b5563;
-                font-size: 9px;
-                font-weight: 700;
-                margin-top: 2px;
-            }}
-            .receipt-nametag {{
-                color: #1d4ed8;
-                margin-top: 1px;
-                font-size: 11px;
-                font-weight: 700;
-                word-break: break-word;
-            }}
+            .title-l1 {{ color: #16A34A; font-size: 14px; font-weight: 900; }}
+            .title-l2 {{ color: #0284C7; font-size: 12px; font-weight: 800; }}
+            .title-l3 {{ color: #1E3A8A; font-size: 12px; font-weight: 800; }}
+            .reg-no {{ color: #4b5563; font-size: 9px; font-weight: 700; margin-top: 2px; }}
+            .receipt-nametag {{ color: #1d4ed8; margin-top: 1px; font-size: 11px; font-weight: 700; }}
             .row {{
                 display: flex;
                 justify-content: space-between;
@@ -433,21 +413,9 @@ def render_html_receipt(booking_info):
                 font-size: 11px;
                 gap: 6px;
             }}
-            .row:nth-child(even) {{
-                background-color: #f8fafc;
-            }}
-            .label {{
-                font-weight: 600;
-                color: #1e3a8a;
-                flex-shrink: 0;
-            }}
-            .value {{
-                color: #111827;
-                text-align: right;
-                font-weight: 500;
-                word-break: break-word;
-                text-transform: uppercase;
-            }}
+            .row:nth-child(even) {{ background-color: #f8fafc; }}
+            .label {{ font-weight: 600; color: #1e3a8a; flex-shrink: 0; }}
+            .value {{ color: #111827; text-align: right; font-weight: 500; text-transform: uppercase; }}
             .total-row {{
                 background-color: #eff6ff !important;
                 font-weight: 700;
@@ -456,14 +424,7 @@ def render_html_receipt(booking_info):
                 border-top: 1px solid #1e3a8a;
                 border-bottom: 1px solid #1e3a8a;
             }}
-            .footer {{
-                text-align: center;
-                margin-top: 8px;
-                color: #059669;
-                font-weight: 600;
-                font-size: 10px;
-                line-height: 1.3;
-            }}
+            .footer {{ text-align: center; margin-top: 8px; color: #059669; font-weight: 600; font-size: 10px; line-height: 1.3; }}
             .print-button {{
                 display: block;
                 width: 100%;
@@ -477,33 +438,17 @@ def render_html_receipt(booking_info):
                 font-size: 13px;
                 font-weight: bold;
                 cursor: pointer;
-                font-family: 'Noto Sans Gujarati', sans-serif;
             }}
-            .print-button:hover {{
-                background-color: #1d4ed8;
-            }}
-
             @media print {{
-                @page {{
-                    size: A6 portrait;
-                    margin: 0;
-                }}
+                @page {{ size: A6 portrait; margin: 0; }}
                 .print-button {{ display: none; }}
                 body {{ background-color: #ffffff; padding: 0; margin: 0; }}
-                .receipt-box {{
-                    border: 1px solid #000;
-                    box-shadow: none;
-                    max-width: 100%;
-                    width: 100%;
-                    border-radius: 0;
-                }}
+                .receipt-box {{ border: 1px solid #000; box-shadow: none; width: 100%; border-radius: 0; }}
             }}
         </style>
         <script>
             function printReceipt() {{
-                try {{
-                    window.parent.document.title = "{pdf_file_name}";
-                }} catch(e) {{}}
+                try {{ window.parent.document.title = "{pdf_file_name}"; }} catch(e) {{}}
                 document.title = "{pdf_file_name}";
                 window.print();
             }}
@@ -512,9 +457,7 @@ def render_html_receipt(booking_info):
     <body>
         <div class="receipt-box">
             <div class="header-flex">
-                <div class="logo-box">
-                    {logo_html}
-                </div>
+                <div class="logo-box">{logo_html}</div>
                 <div class="title-box">
                     <div class="title-l1">NARMADESHWAR</div>
                     <div class="title-l2">VIKLANG VIKAAS</div>
@@ -523,52 +466,17 @@ def render_html_receipt(booking_info):
                     <div class="receipt-nametag">Receipt No: #{booking_info.get('id', 'N/A')}</div>
                 </div>
             </div>
-            
-            <div class="row">
-                <span class="label">પાવતી નં / No:</span>
-                <span class="value">#{booking_info.get('id', 'N/A')}</span>
-            </div>
-            <div class="row">
-                <span class="label">તારીખ / Date:</span>
-                <span class="value">{datetime.now().strftime('%d-%m-%Y')}</span>
-            </div>
-            <div class="row">
-                <span class="label">દાતાશ્રી / Donor:</span>
-                <span class="value">{booking_info['donor_name']}</span>
-            </div>
-            <div class="row">
-                <span class="label">મોબાઈલ / Mobile:</span>
-                <span class="value">{booking_info['phone']}</span>
-            </div>
-            <div class="row">
-                <span class="label">સેવા નામ / Service For:</span>
-                <span class="value">{booking_info['service_for_name']}</span>
-            </div>
-            <div class="row">
-                <span class="label">જમણવાર તારીખ:</span>
-                <span class="value">{booking_info['booking_date']}</span>
-            </div>
-            <div class="row">
-                <span class="label">જમણવાર / Meal:</span>
-                <span class="value">{booking_info['meal_types']}</span>
-            </div>
-            <div class="row">
-                <span class="label">પ્રકાર / Prep Type:</span>
-                <span class="value">{booking_info['meal_prep_type']}</span>
-            </div>
-            <div class="row total-row">
-                <span>રકમ / Amount:</span>
-                <span>₹ {booking_info['amount']:,.2f}</span>
-            </div>
-            <div class="row">
-                <span class="label">પેમેન્ટ / Payment:</span>
-                <span class="value">{booking_info['payment_type']} ({booking_info['payment_status']})</span>
-            </div>
-
-            <div class="footer">
-                Thank you for your noble support!<br>આપના માનવસેવા યોગદાન બદલ આભાર!
-            </div>
-
+            <div class="row"><span class="label">પાવતી નં / No:</span><span class="value">#{booking_info.get('id', 'N/A')}</span></div>
+            <div class="row"><span class="label">તારીખ / Date:</span><span class="value">{datetime.now().strftime('%d-%m-%Y')}</span></div>
+            <div class="row"><span class="label">દાતાશ્રી / Donor:</span><span class="value">{booking_info['donor_name']}</span></div>
+            <div class="row"><span class="label">મોબાઈલ / Mobile:</span><span class="value">{booking_info['phone']}</span></div>
+            <div class="row"><span class="label">સેવા નામ / Service For:</span><span class="value">{booking_info['service_for_name']}</span></div>
+            <div class="row"><span class="label">જમણવાર તારીખ:</span><span class="value">{booking_info['booking_date']}</span></div>
+            <div class="row"><span class="label">જમણવાર / Meal:</span><span class="value">{booking_info['meal_types']}</span></div>
+            <div class="row"><span class="label">પ્રકાર / Prep Type:</span><span class="value">{booking_info['meal_prep_type']}</span></div>
+            <div class="row total-row"><span>રકમ / Amount:</span><span>₹ {booking_info['amount']:,.2f}</span></div>
+            <div class="row"><span class="label">પેમેન્ટ / Payment:</span><span class="value">{booking_info['payment_type']} ({booking_info['payment_status']})</span></div>
+            <div class="footer">Thank you for your noble support!<br>આપના માનવસેવા યોગદાન બદલ આભાર!</div>
             <button class="print-button" onclick="printReceipt()">🖨️ પાવતી પ્રિન્ટ કરો / PDF સેવ કરો</button>
         </div>
     </body>
@@ -578,20 +486,20 @@ def render_html_receipt(booking_info):
 
 
 # ==========================================
-# 🎯 HEADER DESIGN (SIDE-BY-SIDE SIDEWAYS)
+# 🎯 CLEAN COMPACT HEADER DESIGN
 # ==========================================
 logo_b64_main = get_image_base64(LOGO_PATH)
 
 if logo_b64_main:
     st.markdown(
         f"""
-        <div class="header-flex-box">
-            <img class="header-logo-img" src="data:image/png;base64,{logo_b64_main}" />
-            <div class="header-title-box">
-                <h1 class="h-l1">NARMADESHWAR</h1>
-                <h1 class="h-l2">VIKLANG VIKAAS</h1>
-                <h1 class="h-l3">MANAV SEVA TRUST</h1>
-                <p class="h-reg">Reg. No.: {NGO_REG_NO}</p>
+        <div class="header-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px;">
+            <img src="data:image/png;base64,{logo_b64_main}" style="height: 75px; width: auto; object-fit: contain; flex-shrink: 0;" />
+            <div style="display: flex; flex-direction: column; justify-content: center;">
+                <p class="ngo-title-1">NARMADESHWAR</p>
+                <p class="ngo-title-2">VIKLANG VIKAAS</p>
+                <p class="ngo-title-3">MANAV SEVA TRUST</p>
+                <p class="ngo-reg">Reg. No.: {NGO_REG_NO}</p>
             </div>
         </div>
         """,
@@ -600,20 +508,18 @@ if logo_b64_main:
 else:
     st.markdown(
         f"""
-        <div class="header-flex-box">
-            <div class="header-title-box" style="text-align: center;">
-                <h1 class="h-l1">NARMADESHWAR</h1>
-                <h1 class="h-l2">VIKLANG VIKAAS</h1>
-                <h1 class="h-l3">MANAV SEVA TRUST</h1>
-                <p class="h-reg">Reg. No.: {NGO_REG_NO}</p>
-            </div>
+        <div class="header-container" style="text-align: center; margin-bottom: 5px;">
+            <p class="ngo-title-1">NARMADESHWAR</p>
+            <p class="ngo-title-2">VIKLANG VIKAAS</p>
+            <p class="ngo-title-3">MANAV SEVA TRUST</p>
+            <p class="ngo-reg">Reg. No.: {NGO_REG_NO}</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 st.markdown(
-    "<p style='text-align: center; color: #4B5563; font-size: 13.5px; font-weight: bold; margin-top: 5px; margin-bottom: 15px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
+    "<p style='text-align: center; color: #4B5563; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
     unsafe_allow_html=True,
 )
 
