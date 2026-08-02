@@ -72,9 +72,10 @@ CREATE TABLE IF NOT EXISTS inventory (
 conn.commit()
 
 # ==========================================
-# NGO CONFIGURATION & RELATIVE PATHS (CLOUD SAFE)
+# NGO CONFIGURATION & RELATIVE PATHS
 # ==========================================
 NGO_NAME = "નર્મદેશ્વર વિકલાંગ વિકાસ માનવ સેવા ટ્રસ્ટ"
+NGO_REG_NO = "F/5155/Mehsana (એફ/૫૧૫૫/મહેસાણા)"
 NGO_PHONE = "917377174779"
 
 # 🖼️ Dynamic Logo Path Detection
@@ -92,7 +93,7 @@ if not os.path.exists(LOGO_PATH):
             LOGO_PATH = p
             break
 
-# 📁 Dynamic Receipts Directory (Works on both Local & Streamlit Cloud)
+# 📁 Dynamic Receipts Directory
 BASE_DIR = os.getcwd()
 RECEIPTS_DIR = os.path.join(BASE_DIR, "Receipts")
 try:
@@ -128,18 +129,28 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# 🎨 FORCE LIGHT THEME & FIX MOBILE HEADER OVERLAP
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    p, label, input, button, h1, h2, h3, h4, .stMarkdown, .stSelectbox, .stRadio {
-        font-family: 'Noto Sans Gujarati', sans-serif !important;
+    /* Force Light Background for Dark Mode users */
+    .stApp {
+        background-color: #FFFFFF !important;
+        color: #111827 !important;
     }
 
-    /* 🔠 Auto Capitalize all input box text */
+    p, label, input, button, h1, h2, h3, h4, .stMarkdown, .stSelectbox, .stRadio, .stCheckbox {
+        font-family: 'Noto Sans Gujarati', sans-serif !important;
+        color: #111827 !important;
+    }
+
+    /* 🔠 Auto Capitalize text inputs */
     input[type="text"] {
         text-transform: uppercase !important;
+        background-color: #F9FAFB !important;
+        color: #111827 !important;
     }
 
     footer, #MainMenu {
@@ -147,26 +158,53 @@ st.markdown(
     }
 
     .main .block-container {
-        max-width: 620px !important;
+        max-width: 650px !important;
         margin: 0 auto !important;
-        padding-top: 1.5rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 2rem !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
     }
 
+    /* 📱 Mobile Responsive Header Fixes */
     @media (max-width: 768px) {
         .main .block-container {
             max-width: 100% !important;
-            padding-left: 0.8rem !important;
-            padding-right: 0.8rem !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
         }
-        
+
+        .header-container {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 8px !important;
+        }
+
+        .header-logo {
+            height: 75px !important;
+        }
+
+        .header-title-box {
+            text-align: center !important;
+            height: auto !important;
+        }
+
+        .h-l1 { font-size: 18px !important; letter-spacing: 1px !important; line-height: 1.2 !important; }
+        .h-l2 { font-size: 15px !important; letter-spacing: 1px !important; line-height: 1.2 !important; }
+        .h-l3 { font-size: 15px !important; letter-spacing: 1px !important; line-height: 1.2 !important; }
+        .h-reg { font-size: 10px !important; margin-top: 4px !important; }
+
+        /* Keep Checkbox columns side by side on mobile */
         [data-testid="column"] {
-            width: 100% !important;
-            flex: 1 1 100% !important;
-            min-width: 100% !important;
-            margin-bottom: 8px;
+            width: 50% !important;
+            flex: 1 1 50% !important;
+            min-width: 45% !important;
+        }
+
+        .stCheckbox label {
+            font-size: 13.5px !important;
+            padding: 4px 0 !important;
         }
 
         .stButton button {
@@ -196,9 +234,7 @@ def auto_save_pdf_to_folder(booking_info):
             .replace(" ", "_")
         )
 
-        filename = (
-            f"Receipt_No_{booking_info.get('id', 'N/A')}_{clean_donor_name}.pdf"
-        )
+        filename = f"Receipt_No_{booking_info.get('id', 'N/A')}_{clean_donor_name}.pdf"
         file_path = os.path.join(RECEIPTS_DIR, filename)
 
         c = canvas.Canvas(file_path, pagesize=A6)
@@ -210,28 +246,33 @@ def auto_save_pdf_to_folder(booking_info):
 
         c.setFont("Helvetica-Bold", 10)
         c.setFillColorRGB(0.08, 0.64, 0.29)
-        c.drawString(70, height - 25, "NARMADESHWAR")
+        c.drawString(70, height - 22, "NARMADESHWAR")
 
         c.setFillColorRGB(0.01, 0.52, 0.78)
-        c.drawString(70, height - 37, "VIKLANG VIKAAS")
+        c.drawString(70, height - 33, "VIKLANG VIKAAS")
 
         c.setFillColorRGB(0.12, 0.23, 0.54)
-        c.drawString(70, height - 49, "MANAV SEVA TRUST")
+        c.drawString(70, height - 44, "MANAV SEVA TRUST")
+
+        c.setFont("Helvetica", 6.5)
+        c.setFillColorRGB(0.3, 0.3, 0.3)
+        c.drawString(70, height - 53, "Reg. No: F/5155/Mehsana")
 
         c.setFont("Helvetica", 8)
+        c.setFillColorRGB(0, 0, 0)
         c.drawString(
-            10, height - 65, f"Receipt No: #{booking_info.get('id', 'N/A')}"
+            10, height - 66, f"Receipt No: #{booking_info.get('id', 'N/A')}"
         )
         c.drawString(
             width - 80,
-            height - 65,
+            height - 66,
             f"Date: {datetime.now().strftime('%d-%m-%Y')}",
         )
 
         c.line(10, height - 70, width - 10, height - 70)
 
         y = height - 85
-        line_height = 14
+        line_height = 13
 
         details = [
             ("Donor:", str(booking_info["donor_name"]).upper()),
@@ -257,7 +298,7 @@ def auto_save_pdf_to_folder(booking_info):
         c.setFont("Helvetica-Oblique", 7)
         c.setFillColorRGB(0.02, 0.59, 0.41)
         c.drawCentredString(
-            width / 2, 15, "Thank you for your noble support!"
+            width / 2, 12, "Thank you for your noble support!"
         )
 
         c.save()
@@ -277,7 +318,16 @@ def render_html_receipt(booking_info):
         else ""
     )
 
-    clean_donor = booking_info["donor_name"].replace(" ", "_").upper()
+    clean_donor = (
+        "".join(
+            c
+            for c in booking_info["donor_name"]
+            if c.isalnum() or c in (" ", "_", "-")
+        )
+        .strip()
+        .replace(" ", "_")
+        .upper()
+    )
     pdf_file_name = f"Receipt_No_{booking_info.get('id', 'N/A')}_{clean_donor}"
 
     html_code = f"""
@@ -295,7 +345,7 @@ def render_html_receipt(booking_info):
             }}
             body {{
                 font-family: 'Noto Sans Gujarati', Arial, sans-serif;
-                background-color: #f8fafc;
+                background-color: #ffffff;
                 margin: 0;
                 padding: 4px;
                 display: flex;
@@ -316,14 +366,14 @@ def render_html_receipt(booking_info):
                 justify-content: center;
                 gap: 10px;
                 border-bottom: 1.5px solid #1e3a8a;
-                padding-bottom: 8px;
+                padding-bottom: 6px;
                 margin-bottom: 8px;
             }}
             .logo-box {{
                 flex-shrink: 0;
             }}
             .receipt-logo {{
-                height: 65px;
+                height: 60px;
                 width: auto;
             }}
             .title-box {{
@@ -335,25 +385,31 @@ def render_html_receipt(booking_info):
             }}
             .title-l1 {{
                 color: #16A34A;
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 900;
-                letter-spacing: 2px;
+                letter-spacing: 1px;
             }}
             .title-l2 {{
                 color: #0284C7;
-                font-size: 13px;
+                font-size: 12px;
                 font-weight: 800;
                 letter-spacing: 1px;
             }}
             .title-l3 {{
                 color: #1E3A8A;
-                font-size: 13px;
+                font-size: 12px;
                 font-weight: 800;
                 letter-spacing: 1px;
             }}
+            .reg-no {{
+                color: #4b5563;
+                font-size: 9px;
+                font-weight: 700;
+                margin-top: 2px;
+            }}
             .receipt-nametag {{
                 color: #1d4ed8;
-                margin-top: 2px;
+                margin-top: 1px;
                 font-size: 11px;
                 font-weight: 700;
                 word-break: break-word;
@@ -363,7 +419,7 @@ def render_html_receipt(booking_info):
                 justify-content: space-between;
                 padding: 4px 6px;
                 border-bottom: 1px solid #e2e8f0;
-                font-size: 11.5px;
+                font-size: 11px;
                 gap: 6px;
             }}
             .row:nth-child(even) {{
@@ -385,16 +441,16 @@ def render_html_receipt(booking_info):
                 background-color: #eff6ff !important;
                 font-weight: 700;
                 color: #1e3a8a;
-                font-size: 12.5px;
+                font-size: 12px;
                 border-top: 1px solid #1e3a8a;
                 border-bottom: 1px solid #1e3a8a;
             }}
             .footer {{
                 text-align: center;
-                margin-top: 10px;
+                margin-top: 8px;
                 color: #059669;
                 font-weight: 600;
-                font-size: 10.5px;
+                font-size: 10px;
                 line-height: 1.3;
             }}
             .print-button {{
@@ -452,6 +508,7 @@ def render_html_receipt(booking_info):
                     <div class="title-l1">NARMADESHWAR</div>
                     <div class="title-l2">VIKLANG VIKAAS</div>
                     <div class="title-l3">MANAV SEVA TRUST</div>
+                    <div class="reg-no">Reg. No: {NGO_REG_NO}</div>
                     <div class="receipt-nametag">Receipt No: #{booking_info.get('id', 'N/A')}</div>
                 </div>
             </div>
@@ -506,23 +563,24 @@ def render_html_receipt(booking_info):
     </body>
     </html>
     """
-    components.html(html_code, height=520, scrolling=True)
+    components.html(html_code, height=530, scrolling=True)
 
 
 # ==========================================
-# 🎯 HEADER DESIGN
+# 🎯 CLEAN RESPONSIVE HEADER DESIGN
 # ==========================================
 logo_b64_main = get_image_base64(LOGO_PATH)
 
 if logo_b64_main:
     st.markdown(
         f"""
-        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
-            <img src="data:image/png;base64,{logo_b64_main}" style="height: 105px; width: auto; object-fit: contain; flex-shrink: 0;" />
-            <div style="display: flex; flex-direction: column; justify-content: center; height: 105px; line-height: 1.15;">
-                <h1 style='color: #16A34A; margin: 0; padding: 0; font-size: 28px; font-weight: 900; letter-spacing: 4px;'>NARMADESHWAR</h1>
-                <h1 style='color: #0284C7; margin: 0; padding: 0; font-size: 22px; font-weight: 800; letter-spacing: 3px; word-spacing: 5px;'>VIKLANG VIKAAS</h1>
-                <h1 style='color: #1E3A8A; margin: 0; padding: 0; font-size: 22px; font-weight: 800; letter-spacing: 3px; word-spacing: 4px;'>MANAV SEVA TRUST</h1>
+        <div class="header-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px;">
+            <img class="header-logo" src="data:image/png;base64,{logo_b64_main}" style="height: 90px; width: auto; object-fit: contain; flex-shrink: 0;" />
+            <div class="header-title-box" style="display: flex; flex-direction: column; justify-content: center;">
+                <h1 class="h-l1" style='color: #16A34A; margin: 0; padding: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px;'>NARMADESHWAR</h1>
+                <h1 class="h-l2" style='color: #0284C7; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>VIKLANG VIKAAS</h1>
+                <h1 class="h-l3" style='color: #1E3A8A; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>MANAV SEVA TRUST</h1>
+                <p class="h-reg" style='color: #4B5563; margin: 2px 0 0 0; font-size: 11px; font-weight: bold;'>Reg. No.: {NGO_REG_NO}</p>
             </div>
         </div>
         """,
@@ -530,18 +588,19 @@ if logo_b64_main:
     )
 else:
     st.markdown(
-        """
-        <div style="text-align: center; margin-bottom: 10px;">
-            <h1 style='color: #16A34A; margin: 0; padding: 0; font-size: 28px; font-weight: 900; letter-spacing: 4px;'>NARMADESHWAR</h1>
-            <h1 style='color: #0284C7; margin: 0; padding: 0; font-size: 22px; font-weight: 800; letter-spacing: 3px; word-spacing: 5px;'>VIKLANG VIKAAS</h1>
-            <h1 style='color: #1E3A8A; margin: 0; padding: 0; font-size: 22px; font-weight: 800; letter-spacing: 3px; word-spacing: 4px;'>MANAV SEVA TRUST</h1>
+        f"""
+        <div class="header-container" style="text-align: center; margin-bottom: 10px;">
+            <h1 class="h-l1" style='color: #16A34A; margin: 0; padding: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px;'>NARMADESHWAR</h1>
+            <h1 class="h-l2" style='color: #0284C7; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>VIKLANG VIKAAS</h1>
+            <h1 class="h-l3" style='color: #1E3A8A; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>MANAV SEVA TRUST</h1>
+            <p class="h-reg" style='color: #4B5563; margin: 2px 0 0 0; font-size: 11px; font-weight: bold;'>Reg. No.: {NGO_REG_NO}</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 st.markdown(
-    "<p style='text-align: center; color: #4B5563; font-size: 15px; font-weight: bold; margin-top: 5px; margin-bottom: 15px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
+    "<p style='text-align: center; color: #4B5563; font-size: 13.5px; font-weight: bold; margin-top: 5px; margin-bottom: 15px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
     unsafe_allow_html=True,
 )
 
