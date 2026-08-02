@@ -129,37 +129,27 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 FORCE LIGHT THEME & PERFECT VISIBILITY CSS
+# 🎨 CLEAN STYLING, HIDE GLITCHES & SIDE-BY-SIDE CARDS CSS
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    /* Force Pure White Background & Black Text everywhere */
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #FFFFFF !important;
     }
 
-    /* Force all text & labels to pitch black */
     label, p, span, div, h1, h2, h3, h4, .stMarkdown {
         font-family: 'Noto Sans Gujarati', sans-serif !important;
         color: #111827 !important;
     }
 
-    /* Input Labels specific fix */
     [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] span {
         color: #111827 !important;
         font-weight: 700 !important;
         font-size: 14px !important;
     }
 
-    /* Radio button and Checkbox text fix */
-    [data-testid="stRadioButtonGroup"] label p, .stCheckbox label span {
-        color: #111827 !important;
-        font-weight: 600 !important;
-    }
-
-    /* Text Inputs Styling */
     input[type="text"], input[type="password"], input[type="number"] {
         text-transform: uppercase !important;
         background-color: #F9FAFB !important;
@@ -168,12 +158,14 @@ st.markdown(
         border-radius: 6px !important;
     }
 
-    footer, #MainMenu {
-        display: none !important;
-    }
+    /* Hide unwanted system text/icons */
+    [data-testid="collapsedControl"] svg { display: block !important; }
+    button[kind="header"] svg { display: block !important; }
+
+    footer, #MainMenu { display: none !important; }
 
     .main .block-container {
-        max-width: 650px !important;
+        max-width: 680px !important;
         margin: 0 auto !important;
         padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
@@ -181,37 +173,10 @@ st.markdown(
         padding-right: 0.8rem !important;
     }
 
-    /* Clean Header Style */
-    .ngo-title-1 {
-        color: #16A34A !important;
-        font-size: 22px !important;
-        font-weight: 900 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1.15 !important;
-    }
-    .ngo-title-2 {
-        color: #0284C7 !important;
-        font-size: 17px !important;
-        font-weight: 800 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1.15 !important;
-    }
-    .ngo-title-3 {
-        color: #1E3A8A !important;
-        font-size: 17px !important;
-        font-weight: 800 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1.15 !important;
-    }
-    .ngo-reg {
-        color: #4B5563 !important;
-        font-size: 11px !important;
-        font-weight: bold !important;
-        margin: 3px 0 0 0 !important;
-    }
+    .ngo-title-1 { color: #16A34A !important; font-size: 22px !important; font-weight: 900 !important; margin: 0; line-height: 1.15; }
+    .ngo-title-2 { color: #0284C7 !important; font-size: 17px !important; font-weight: 800 !important; margin: 0; line-height: 1.15; }
+    .ngo-title-3 { color: #1E3A8A !important; font-size: 17px !important; font-weight: 800 !important; margin: 0; line-height: 1.15; }
+    .ngo-reg { color: #4B5563 !important; font-size: 11px !important; font-weight: bold !important; margin: 3px 0 0 0; }
 
     @media (max-width: 768px) {
         .main .block-container {
@@ -219,17 +184,10 @@ st.markdown(
             padding-left: 0.5rem !important;
             padding-right: 0.5rem !important;
         }
-
-        [data-testid="column"] {
-            width: 50% !important;
-            flex: 1 1 50% !important;
-            min-width: 45% !important;
-        }
-
         .stButton button {
             width: 100% !important;
-            font-size: 16px !important;
-            padding: 12px !important;
+            font-size: 15px !important;
+            padding: 10px !important;
         }
     }
     </style>
@@ -239,7 +197,7 @@ st.markdown(
 
 
 # ==========================================
-# 📄 AUTO-SAVE BACKEND PDF FUNCTION (A6 SMALL SIZE)
+# 📄 AUTO-SAVE BACKEND PDF FUNCTION
 # ==========================================
 def auto_save_pdf_to_folder(booking_info):
     try:
@@ -568,7 +526,7 @@ else:
 choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ
+# ૧. જમણવાર બુકિંગ મોડ્યુલ (SIDE-BY-SIDE CLICKABLE CARDS)
 # ==========================================
 if choice == "🍲 જમણવાર બુકિંગ":
     st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -593,21 +551,69 @@ if choice == "🍲 જમણવાર બુકિંગ":
         m for row in booked_records if row[0] for m in row[0].split(", ")
     ]
 
-    st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો *")
+    st.write(
+        "### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો (કાર્ડ પર ક્લિક કરીને સિલેક્ટ કરો) *"
+    )
+
+    if "selected_meals_list" not in st.session_state:
+        st.session_state["selected_meals_list"] = []
+
     selected_meals = []
 
-    col1, col2 = st.columns(2)
-    cols = [col1, col2, col1, col2]
+    # Side-by-Side 2 columns grid for cards
+    c_card1, c_card2 = st.columns(2)
+    card_cols = [c_card1, c_card2, c_card1, c_card2]
 
     for idx, meal in enumerate(ALL_MEALS):
         rate_display = int(MEAL_RATES[meal])
-        label_text = f"{meal} (₹{rate_display})"
+        is_booked = meal in booked_meals
 
-        if meal in booked_meals:
-            cols[idx].error(f"❌ {meal} (બુક થયેલ છે)")
-        else:
-            if cols[idx].checkbox(label_text, key=f"chk_{meal}"):
-                selected_meals.append(meal)
+        with card_cols[idx]:
+            if is_booked:
+                st.markdown(
+                    f"""
+                    <div style="background-color: #FEE2E2; border: 2px solid #EF4444; border-radius: 8px; padding: 12px; margin-bottom: 10px; text-align: center; opacity: 0.8;">
+                        <h4 style="margin: 0; color: #991B1B; font-size: 15px;">❌ {meal}</h4>
+                        <p style="margin: 4px 0 0 0; color: #B91C1C; font-weight: bold; font-size: 13px;">₹{rate_display} (બુક થયેલ છે)</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                is_selected = meal in st.session_state["selected_meals_list"]
+                card_bg = "#EFF6FF" if is_selected else "#F9FAFB"
+                border_color = "#2563EB" if is_selected else "#D1D5DB"
+                badge_color = "#1D4ED8" if is_selected else "#059669"
+                status_text = (
+                    "✓ સિલેક્ટ થયેલ"
+                    if is_selected
+                    else "ટચ કરીને સિલેક્ટ કરો"
+                )
+
+                st.markdown(
+                    f"""
+                    <div style="background-color: {card_bg}; border: 2px solid {border_color}; border-radius: 8px; padding: 12px; margin-bottom: 8px; text-align: center; min-height: 90px; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="margin: 0; color: #1E3A8A; font-size: 15px; font-weight: bold;">{meal}</h4>
+                        <p style="margin: 3px 0; color: #047857; font-weight: 800; font-size: 14px;">₹{rate_display}</p>
+                        <span style="color: {badge_color}; font-size: 11px; font-weight: bold;">{status_text}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                if is_selected:
+                    if st.button("હટાવો (Remove)", key=f"toggle_{idx}"):
+                        st.session_state["selected_meals_list"].remove(meal)
+                        st.rerun()
+                else:
+                    if st.button("સિલેક્ટ કરો", key=f"toggle_{idx}"):
+                        st.session_state["selected_meals_list"].append(meal)
+                        st.rerun()
+
+    # Collect selected meals
+    for meal in ALL_MEALS:
+        if meal in st.session_state["selected_meals_list"] and meal not in booked_meals:
+            selected_meals.append(meal)
 
     st.markdown("---")
 
@@ -727,6 +733,8 @@ if choice == "🍲 જમણવાર બુકિંગ":
                 last_id = cursor.lastrowid
                 st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વક સેવ થઈ ગયું છે!")
 
+                st.session_state["selected_meals_list"] = []
+
                 booking_dict = {
                     "id": last_id,
                     "donor_name": donor_name,
@@ -771,7 +779,7 @@ if choice == "🍲 જમણવાર બુકિંગ":
                     unsafe_allow_html=True,
                 )
     else:
-        st.info("💡 કૃપા કરીને ઉપર આપેલા બોક્સમાંથી ઓછામાં ઓછો ૧ જમણવાર પસંદ કરો.")
+        st.info("💡 કૃપા કરીને ઉપરના કાર્ડ્સમાંથી કોઈપણ જમણવાર પસંદ કરો.")
 
 # ==========================================
 # ૨. સામાન્ય દાન (Donation)
