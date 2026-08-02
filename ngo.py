@@ -129,32 +129,32 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 BULLETPROOF STABLE CSS (Ensures High Contrast & Clickability)
+# 🎨 HARDCODED VISIBILITY CSS (Guarantees Sharp Contrast)
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    /* Universal Font & Text Color Enforcement */
     html, body, [class*="css"] {
         font-family: 'Noto Sans Gujarati', sans-serif !important;
+        background-color: #FFFFFF !important;
+        color: #111827 !important;
     }
 
-    /* Force Dark Text on Labels so they are never invisible */
-    label, .stCheckbox span, .stRadio div {
+    label, p, span, div, h1, h2, h3, h4 {
         color: #111827 !important;
-        font-weight: 700 !important;
-        font-size: 14.5px !important;
+        font-family: 'Noto Sans Gujarati', sans-serif !important;
     }
 
     input[type="text"], input[type="password"], input[type="number"] {
         text-transform: uppercase !important;
-        font-weight: 600 !important;
+        background-color: #F9FAFB !important;
+        color: #111827 !important;
+        border: 1.5px solid #D1D5DB !important;
+        border-radius: 6px !important;
     }
 
-    footer, #MainMenu {
-        display: none !important;
-    }
+    footer, #MainMenu { display: none !important; }
 
     .main .block-container {
         max-width: 650px !important;
@@ -164,29 +164,6 @@ st.markdown(
         padding-left: 0.8rem !important;
         padding-right: 0.8rem !important;
     }
-
-    .ngo-title-1 { color: #16A34A !important; font-size: 21px !important; font-weight: 900 !important; margin: 0; line-height: 1.1; }
-    .ngo-title-2 { color: #0284C7 !important; font-size: 16px !important; font-weight: 800 !important; margin: 0; line-height: 1.1; }
-    .ngo-title-3 { color: #1E3A8A !important; font-size: 16px !important; font-weight: 800 !important; margin: 0; line-height: 1.1; }
-    .ngo-reg { color: #4B5563 !important; font-size: 11px !important; font-weight: bold; margin: 2px 0 0 0; }
-
-    @media (max-width: 768px) {
-        .main .block-container {
-            max-width: 100% !important;
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
-        }
-        [data-testid="column"] {
-            width: 50% !important;
-            flex: 1 1 50% !important;
-            min-width: 45% !important;
-        }
-        .stButton button {
-            width: 100% !important;
-            font-size: 16px !important;
-            padding: 12px !important;
-        }
-    }
     </style>
 """,
     unsafe_allow_html=True,
@@ -194,7 +171,7 @@ st.markdown(
 
 
 # ==========================================
-# 📄 AUTO-SAVE BACKEND PDF FUNCTION (A6 SMALL SIZE)
+# 📄 AUTO-SAVE BACKEND PDF FUNCTION
 # ==========================================
 def auto_save_pdf_to_folder(booking_info):
     try:
@@ -207,7 +184,6 @@ def auto_save_pdf_to_folder(booking_info):
             .strip()
             .replace(" ", "_")
         )
-
         filename = f"Receipt_No_{booking_info.get('id', 'N/A')}_{clean_donor_name}.pdf"
         file_path = os.path.join(RECEIPTS_DIR, filename)
 
@@ -247,7 +223,6 @@ def auto_save_pdf_to_folder(booking_info):
 
         y = height - 85
         line_height = 13
-
         details = [
             ("Donor:", str(booking_info["donor_name"]).upper()),
             ("Phone:", str(booking_info["phone"])),
@@ -274,7 +249,6 @@ def auto_save_pdf_to_folder(booking_info):
         c.drawCentredString(
             width / 2, 12, "Thank you for your noble support!"
         )
-
         c.save()
         return file_path
     except Exception as e:
@@ -434,7 +408,7 @@ def render_html_receipt(booking_info):
 
 
 # ==========================================
-# 🎯 CLEAN HEADER DESIGN
+# 🎯 HEADER DESIGN
 # ==========================================
 logo_b64_main = get_image_base64(LOGO_PATH)
 
@@ -442,12 +416,12 @@ if logo_b64_main:
     st.markdown(
         f"""
         <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px;">
-            <img src="data:image/png;base64,{logo_b64_main}" style="height: 70px; width: auto; object-fit: contain; flex-shrink: 0;" />
+            <img src="data:image/png;base64,{logo_b64_main}" style="height: 65px; width: auto; object-fit: contain; flex-shrink: 0;" />
             <div>
-                <p class="ngo-title-1">NARMADESHWAR</p>
-                <p class="ngo-title-2">VIKLANG VIKAAS</p>
-                <p class="ngo-title-3">MANAV SEVA TRUST</p>
-                <p class="ngo-reg">Reg. No.: {NGO_REG_NO}</p>
+                <p style="color: #16A34A; font-size: 20px; font-weight: 900; margin: 0; line-height: 1.1;">NARMADESHWAR</p>
+                <p style="color: #0284C7; font-size: 15px; font-weight: 800; margin: 0; line-height: 1.1;">VIKLANG VIKAAS</p>
+                <p style="color: #1E3A8A; font-size: 15px; font-weight: 800; margin: 0; line-height: 1.1;">MANAV SEVA TRUST</p>
+                <p style="color: #4B5563; font-size: 11px; font-weight: bold; margin: 2px 0 0 0;">Reg. No.: {NGO_REG_NO}</p>
             </div>
         </div>
         """,
@@ -457,17 +431,17 @@ else:
     st.markdown(
         f"""
         <div style="text-align: center; margin-bottom: 5px;">
-            <p class="ngo-title-1">NARMADESHWAR</p>
-            <p class="ngo-title-2">VIKLANG VIKAAS</p>
-            <p class="ngo-title-3">MANAV SEVA TRUST</p>
-            <p class="ngo-reg">Reg. No.: {NGO_REG_NO}</p>
+            <p style="color: #16A34A; font-size: 20px; font-weight: 900; margin: 0; line-height: 1.1;">NARMADESHWAR</p>
+            <p style="color: #0284C7; font-size: 15px; font-weight: 800; margin: 0; line-height: 1.1;">VIKLANG VIKAAS</p>
+            <p style="color: #1E3A8A; font-size: 15px; font-weight: 800; margin: 0; line-height: 1.1;">MANAV SEVA TRUST</p>
+            <p style="color: #4B5563; font-size: 11px; font-weight: bold; margin: 2px 0 0 0;">Reg. No.: {NGO_REG_NO}</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 st.markdown(
-    "<p style='text-align: center; color: #4B5563; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
+    "<p style='text-align: center; color: #374151; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
     unsafe_allow_html=True,
 )
 
@@ -523,7 +497,7 @@ else:
 choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ
+# ૧. જમણવાર બુકિંગ મોડ્યુલ (4 CARDS MULTI-SELECT)
 # ==========================================
 if choice == "🍲 જમણવાર બુકિંગ":
     st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -548,21 +522,28 @@ if choice == "🍲 જમણવાર બુકિંગ":
         m for row in booked_records if row[0] for m in row[0].split(", ")
     ]
 
-    st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો *")
+    st.markdown(
+        "<p style='font-size: 16px; font-weight: bold; color: #1F2937;'>૨. ઉપલબ્ધ જમણવાર પસંદ કરો (એકથી વધુ કાર્ડ સિલેક્ટ કરી શકો છો) *</p>",
+        unsafe_allow_html=True,
+    )
+
     selected_meals = []
 
-    col1, col2 = st.columns(2)
-    cols = [col1, col2, col1, col2]
+    # 4 Cards Display in 2 Columns grid layout
+    c_card1, c_card2 = st.columns(2)
+    card_cols = [c_card1, c_card2, c_card1, c_card2]
 
-    for idx, meal in enumerate(ALL_MEALS):
-        rate_display = int(MEAL_RATES[meal])
-        label_text = f"{meal} (₹{rate_display})"
-
-        if meal in booked_meals:
-            cols[idx].error(f"❌ {meal} (બુક થયેલ છે)")
-        else:
-            if cols[idx].checkbox(label_text, key=f"chk_{meal}"):
-                selected_meals.append(meal)
+    for idx, (meal, rate) in enumerate(MEAL_RATES.items()):
+        with card_cols[idx]:
+            if meal in booked_meals:
+                st.error(f"❌ {meal}\n(₹{int(rate)})\nબુક થયેલ છે")
+            else:
+                # Custom Interactive Card Checkbox
+                is_checked = st.checkbox(
+                    f"✨ {meal}\n(કિંમત: ₹{int(rate)})", key=f"meal_card_{idx}"
+                )
+                if is_checked:
+                    selected_meals.append(meal)
 
     st.markdown("---")
 
@@ -589,7 +570,6 @@ if choice == "🍲 જમણવાર બુકિંગ":
                 if raw_donor_name
                 else ""
             )
-
             donor_phone = st.text_input(
                 "૫. મોબાઈલ નંબર *", max_chars=10, placeholder="9876543210"
             )
@@ -726,14 +706,13 @@ if choice == "🍲 જમણવાર બુકિંગ":
                     unsafe_allow_html=True,
                 )
     else:
-        st.info("💡 કૃપા કરીને ઉપર આપેલા બોક્સમાંથી ઓછામાં ઓછો ૧ જમણવાર પસંદ કરો.")
+        st.info("💡 કૃપા કરીને ઉપરના ૪ કાર્ડ્સમાંથી ઓછામાં ઓછો ૧ જમણવાર પસંદ કરો.")
 
 # ==========================================
 # ૨. સામાન્ય દાન (Donation)
 # ==========================================
 elif choice == "🎁 સામાન્ય દાન (Donation)":
     st.subheader("🎁 સામાન્ય દાન સ્વીકાર ફોર્મ")
-
     prefix_options = ["શ્રી", "સ્વ.", "ગં.સ્વ.", "શ્રીમતી", "કુ."]
 
     with st.form("donation_form", clear_on_submit=True):
