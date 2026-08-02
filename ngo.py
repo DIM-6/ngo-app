@@ -129,28 +129,19 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 FORCE LIGHT THEME & FIX MOBILE HEADER OVERLAP
+# 🎨 PERFECT RESPONSIVE & CLICKABLE MOBILE/DESKTOP STYLING
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    /* Force Light Background for Dark Mode users */
-    .stApp {
-        background-color: #FFFFFF !important;
-        color: #111827 !important;
-    }
-
     p, label, input, button, h1, h2, h3, h4, .stMarkdown, .stSelectbox, .stRadio, .stCheckbox {
         font-family: 'Noto Sans Gujarati', sans-serif !important;
-        color: #111827 !important;
     }
 
     /* 🔠 Auto Capitalize text inputs */
     input[type="text"] {
         text-transform: uppercase !important;
-        background-color: #F9FAFB !important;
-        color: #111827 !important;
     }
 
     footer, #MainMenu {
@@ -162,40 +153,61 @@ st.markdown(
         margin: 0 auto !important;
         padding-top: 1rem !important;
         padding-bottom: 2rem !important;
-        padding-left: 0.8rem !important;
-        padding-right: 0.8rem !important;
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
     }
 
-    /* 📱 Mobile Responsive Header Fixes */
+    /* 📱 Header Side-by-Side Flex Layout (Mobile & Desktop) */
+    .header-flex-box {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-bottom: 10px !important;
+    }
+
+    .header-logo-img {
+        height: 75px !important;
+        width: auto !important;
+        object-fit: contain !important;
+        flex-shrink: 0 !important;
+    }
+
+    .header-title-box {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        line-height: 1.15 !important;
+        text-align: left !important;
+    }
+
+    .h-l1 { color: #16A34A !important; margin: 0 !important; font-size: 20px !important; font-weight: 900 !important; letter-spacing: 1px !important; }
+    .h-l2 { color: #0284C7 !important; margin: 0 !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: 1px !important; }
+    .h-l3 { color: #1E3A8A !important; margin: 0 !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: 1px !important; }
+    .h-reg { color: #4B5563 !important; margin: 2px 0 0 0 !important; font-size: 10.5px !important; font-weight: 700 !important; }
+
+    /* 🎯 Fix Desktop Mode Checkbox Click Issue */
+    .stCheckbox {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+    .stCheckbox label {
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        user-select: none !important;
+    }
+
     @media (max-width: 768px) {
-        .main .block-container {
-            max-width: 100% !important;
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
-        }
+        .h-l1 { font-size: 16px !important; }
+        .h-l2 { font-size: 13.5px !important; }
+        .h-l3 { font-size: 13.5px !important; }
+        .h-reg { font-size: 9.5px !important; }
+        .header-logo-img { height: 60px !important; }
 
-        .header-container {
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center !important;
-            gap: 8px !important;
-        }
-
-        .header-logo {
-            height: 75px !important;
-        }
-
-        .header-title-box {
-            text-align: center !important;
-            height: auto !important;
-        }
-
-        .h-l1 { font-size: 18px !important; letter-spacing: 1px !important; line-height: 1.2 !important; }
-        .h-l2 { font-size: 15px !important; letter-spacing: 1px !important; line-height: 1.2 !important; }
-        .h-l3 { font-size: 15px !important; letter-spacing: 1px !important; line-height: 1.2 !important; }
-        .h-reg { font-size: 10px !important; margin-top: 4px !important; }
-
-        /* Keep Checkbox columns side by side on mobile */
+        /* Keep Checkbox columns side-by-side on mobile */
         [data-testid="column"] {
             width: 50% !important;
             flex: 1 1 50% !important;
@@ -203,8 +215,7 @@ st.markdown(
         }
 
         .stCheckbox label {
-            font-size: 13.5px !important;
-            padding: 4px 0 !important;
+            font-size: 13px !important;
         }
 
         .stButton button {
@@ -567,20 +578,20 @@ def render_html_receipt(booking_info):
 
 
 # ==========================================
-# 🎯 CLEAN RESPONSIVE HEADER DESIGN
+# 🎯 HEADER DESIGN (SIDE-BY-SIDE SIDEWAYS)
 # ==========================================
 logo_b64_main = get_image_base64(LOGO_PATH)
 
 if logo_b64_main:
     st.markdown(
         f"""
-        <div class="header-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px;">
-            <img class="header-logo" src="data:image/png;base64,{logo_b64_main}" style="height: 90px; width: auto; object-fit: contain; flex-shrink: 0;" />
-            <div class="header-title-box" style="display: flex; flex-direction: column; justify-content: center;">
-                <h1 class="h-l1" style='color: #16A34A; margin: 0; padding: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px;'>NARMADESHWAR</h1>
-                <h1 class="h-l2" style='color: #0284C7; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>VIKLANG VIKAAS</h1>
-                <h1 class="h-l3" style='color: #1E3A8A; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>MANAV SEVA TRUST</h1>
-                <p class="h-reg" style='color: #4B5563; margin: 2px 0 0 0; font-size: 11px; font-weight: bold;'>Reg. No.: {NGO_REG_NO}</p>
+        <div class="header-flex-box">
+            <img class="header-logo-img" src="data:image/png;base64,{logo_b64_main}" />
+            <div class="header-title-box">
+                <h1 class="h-l1">NARMADESHWAR</h1>
+                <h1 class="h-l2">VIKLANG VIKAAS</h1>
+                <h1 class="h-l3">MANAV SEVA TRUST</h1>
+                <p class="h-reg">Reg. No.: {NGO_REG_NO}</p>
             </div>
         </div>
         """,
@@ -589,11 +600,13 @@ if logo_b64_main:
 else:
     st.markdown(
         f"""
-        <div class="header-container" style="text-align: center; margin-bottom: 10px;">
-            <h1 class="h-l1" style='color: #16A34A; margin: 0; padding: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px;'>NARMADESHWAR</h1>
-            <h1 class="h-l2" style='color: #0284C7; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>VIKLANG VIKAAS</h1>
-            <h1 class="h-l3" style='color: #1E3A8A; margin: 0; padding: 0; font-size: 19px; font-weight: 800; letter-spacing: 2px;'>MANAV SEVA TRUST</h1>
-            <p class="h-reg" style='color: #4B5563; margin: 2px 0 0 0; font-size: 11px; font-weight: bold;'>Reg. No.: {NGO_REG_NO}</p>
+        <div class="header-flex-box">
+            <div class="header-title-box" style="text-align: center;">
+                <h1 class="h-l1">NARMADESHWAR</h1>
+                <h1 class="h-l2">VIKLANG VIKAAS</h1>
+                <h1 class="h-l3">MANAV SEVA TRUST</h1>
+                <p class="h-reg">Reg. No.: {NGO_REG_NO}</p>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
