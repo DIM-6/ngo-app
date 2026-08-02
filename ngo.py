@@ -129,70 +129,67 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 PERMANENT STYLING: LIGHT THEME + CLEAR SIDEBAR + EASY TOUCH
+# 🎨 PERFECT CSS FOR DARK/LIGHT MODE & CLEAR TEXT LABELS
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    /* Global Body Background */
-    .stApp {
+    /* Force Light background & pitch black text for high visibility */
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #FFFFFF !important;
-        color: #0F172A !important;
     }
 
-    p, label, input, button, h1, h2, h3, h4, span, div {
+    /* Fix ALL Label visibility */
+    label, p, span, div, h1, h2, h3, h4, .stMarkdown {
         font-family: 'Noto Sans Gujarati', sans-serif !important;
+        color: #000000 !important;
     }
 
-    /* Auto Capitalize Text Inputs */
-    input[type="text"] {
+    /* Input Labels specific fix */
+    [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] span {
+        color: #000000 !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+    }
+
+    /* Radio button text fix */
+    [data-testid="stRadioButtonGroup"] label p {
+        color: #000000 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Text Inputs Styling */
+    input[type="text"], input[type="password"], input[type="number"] {
         text-transform: uppercase !important;
-        background-color: #F8FAFC !important;
-        color: #0F172A !important;
-        border: 1px solid #CBD5E1 !important;
+        background-color: #F3F4F6 !important;
+        color: #000000 !important;
+        border: 1px solid #9CA3AF !important;
+        border-radius: 6px !important;
+    }
+
+    /* Hide header icons text overlay glitches */
+    [data-testid="stSidebarNav"] span {
+        font-size: 14px !important;
     }
 
     footer, #MainMenu {
         display: none !important;
     }
 
-    /* 📌 SIDEBAR FIXES (Readable Text & Clear Contrast) */
-    [data-testid="stSidebar"] {
-        background-color: #F1F5F9 !important;
-        border-right: 2px solid #E2E8F0 !important;
-    }
-
-    [data-testid="stSidebar"] * {
-        color: #0F172A !important;
-    }
-
-    [data-testid="stSidebar"] .stRadio label {
-        font-size: 15px !important;
-        font-weight: 700 !important;
-        padding: 8px 12px !important;
-        background-color: #FFFFFF !important;
-        border-radius: 6px !important;
-        margin-bottom: 6px !important;
-        border: 1px solid #CBD5E1 !important;
-        display: block !important;
-        cursor: pointer !important;
-    }
-
-    /* Main Container Width */
     .main .block-container {
         max-width: 650px !important;
         margin: 0 auto !important;
-        padding-top: 0.5rem !important;
+        padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
         padding-left: 0.8rem !important;
         padding-right: 0.8rem !important;
     }
 
-    /* Header Compact Styles */
+    /* Header Compact CSS */
     .ngo-title-1 {
         color: #16A34A !important;
-        font-size: 21px !important;
+        font-size: 22px !important;
         font-weight: 900 !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -200,7 +197,7 @@ st.markdown(
     }
     .ngo-title-2 {
         color: #0284C7 !important;
-        font-size: 16px !important;
+        font-size: 17px !important;
         font-weight: 800 !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -208,7 +205,7 @@ st.markdown(
     }
     .ngo-title-3 {
         color: #1E3A8A !important;
-        font-size: 16px !important;
+        font-size: 17px !important;
         font-weight: 800 !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -221,7 +218,6 @@ st.markdown(
         margin: 2px 0 0 0 !important;
     }
 
-    /* Mobile Adaptations */
     @media (max-width: 768px) {
         .main .block-container {
             max-width: 100% !important;
@@ -229,9 +225,11 @@ st.markdown(
             padding-right: 0.5rem !important;
         }
 
-        .ngo-title-1 { font-size: 19px !important; }
-        .ngo-title-2 { font-size: 15px !important; }
-        .ngo-title-3 { font-size: 15px !important; }
+        [data-testid="column"] {
+            width: 50% !important;
+            flex: 1 1 50% !important;
+            min-width: 45% !important;
+        }
 
         .stButton button {
             width: 100% !important;
@@ -486,7 +484,7 @@ def render_html_receipt(booking_info):
 
 
 # ==========================================
-# 🎯 CLEAN COMPACT HEADER DESIGN
+# 🎯 CLEAN HEADER DESIGN
 # ==========================================
 logo_b64_main = get_image_base64(LOGO_PATH)
 
@@ -519,7 +517,7 @@ else:
     )
 
 st.markdown(
-    "<p style='text-align: center; color: #4B5563; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
+    "<p style='text-align: center; color: #4B5563 !important; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
     unsafe_allow_html=True,
 )
 
@@ -572,10 +570,10 @@ else:
         "🎁 સામાન્ય દાન (Donation)",
     ]
 
-choice = st.sidebar.radio("📌 મુખ્ય મેનૂ પસંદ કરો", menu)
+choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ (CARD SELECTION)
+# ૧. જમણવાર બુકિંગ મોડ્યુલ
 # ==========================================
 if choice == "🍲 જમણવાર બુકિંગ":
     st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -601,27 +599,20 @@ if choice == "🍲 જમણવાર બુકિંગ":
     ]
 
     st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો *")
-
-    available_meal_options = []
-    for m in ALL_MEALS:
-        if m in booked_meals:
-            st.error(f"❌ {m} (આ દિવસે બુક થયેલ છે)")
-        else:
-            available_meal_options.append(f"{m} (₹{int(MEAL_RATES[m])})")
-
-    selected_card_meals = []
-    if available_meal_options:
-        selected_card_meals = st.multiselect(
-            "બોક્સ પર ક્લિક કરીને એક કે તેથી વધુ જમણવાર સિલેક્ટ કરો:",
-            options=available_meal_options,
-            placeholder="જમણવાર પસંદ કરવા માટે અહીં ક્લિક કરો...",
-        )
-
     selected_meals = []
-    for full_opt in selected_card_meals:
-        for original_m in ALL_MEALS:
-            if original_m in full_opt:
-                selected_meals.append(original_m)
+
+    col1, col2 = st.columns(2)
+    cols = [col1, col2, col1, col2]
+
+    for idx, meal in enumerate(ALL_MEALS):
+        rate_display = int(MEAL_RATES[meal])
+        label_text = f"{meal} (₹{rate_display})"
+
+        if meal in booked_meals:
+            cols[idx].error(f"❌ {meal} (બુક થયેલ છે)")
+        else:
+            if cols[idx].checkbox(label_text, key=f"chk_{meal}"):
+                selected_meals.append(meal)
 
     st.markdown("---")
 
