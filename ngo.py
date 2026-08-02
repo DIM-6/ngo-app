@@ -8,73 +8,68 @@ import pandas as pd
 from PIL import Image
 import streamlit as st
 import streamlit.components.v1 as components
+
 from reportlab.lib.pagesizes import A6
 from reportlab.pdfgen import canvas
-import sys
 
 # ==========================================
 # DATABASE SETUP (SQLite)
 # ==========================================
-# Database connection with timeout
-conn = sqlite3.connect("ngo_master.db", check_same_thread=False, timeout=10)
+conn = sqlite3.connect("ngo_master.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# Create tables with error handling
-try:
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS bookings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        donor_name TEXT,
-        phone TEXT,
-        service_for_name TEXT,
-        booking_date TEXT,
-        meal_types TEXT,
-        meal_prep_type TEXT,
-        amount REAL,
-        payment_status TEXT,
-        payment_type TEXT,
-        utr_number TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    donor_name TEXT,
+    phone TEXT,
+    service_for_name TEXT,
+    booking_date TEXT,
+    meal_types TEXT,
+    meal_prep_type TEXT,
+    amount REAL,
+    payment_status TEXT,
+    payment_type TEXT,
+    utr_number TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS donations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        donor_name TEXT,
-        phone TEXT,
-        donation_type TEXT,
-        amount REAL,
-        payment_mode TEXT,
-        utr_number TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS donations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    donor_name TEXT,
+    phone TEXT,
+    donation_type TEXT,
+    amount REAL,
+    payment_mode TEXT,
+    utr_number TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS expenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        expense_date TEXT,
-        category TEXT,
-        description TEXT,
-        amount REAL
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_date TEXT,
+    category TEXT,
+    description TEXT,
+    amount REAL
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS inventory (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        item_name TEXT,
-        trans_type TEXT,
-        quantity REAL,
-        unit TEXT,
-        entry_date TEXT,
-        remarks TEXT
-    )
-    """)
-    conn.commit()
-except Exception as e:
-    st.error(f"Database Error: {str(e)}")
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS inventory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_name TEXT,
+    trans_type TEXT,
+    quantity REAL,
+    unit TEXT,
+    entry_date TEXT,
+    remarks TEXT
+)
+""")
+conn.commit()
 
 # ==========================================
 # NGO CONFIGURATION & RELATIVE PATHS
@@ -83,27 +78,20 @@ NGO_NAME = "નર્મદેશ્વર વિકલાંગ વિકાસ
 NGO_REG_NO = "F/5155/Mehsana (એફ/૫૧૫૫/મહેસાણા)"
 NGO_PHONE = "917377174779"
 
-# 🖼️ Dynamic Logo Path Detection with better error handling
-def find_logo():
-    """Find logo file in multiple possible locations"""
-    logo_paths = [
-        "rg_ngo_logo.png",
-        "rg_ngo_logo.jpg",
-        "rg_ngo_logo.jpeg",
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "rg_ngo_logo.png"),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "rg_ngo_logo.jpg"),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "rg_ngo_logo.jpeg"),
+# 🖼️ Dynamic Logo Path Detection
+LOGO_PATH = "rg_ngo_logo.png"
+if not os.path.exists(LOGO_PATH):
+    possible_paths = [
         "/home/dharmesh/NGO Work/rg_ngo_logo.png",
         "/home/dharmesh/NGO Work/rg_ngo_logo.jpg",
         "/home/dharmesh/NGO Work/rg_ngo_logo.jpeg",
+        "rg_ngo_logo.jpg",
+        "rg_ngo_logo.jpeg",
     ]
-    
-    for path in logo_paths:
-        if os.path.exists(path):
-            return path
-    return None
-
-LOGO_PATH = find_logo()
+    for p in possible_paths:
+        if os.path.exists(p):
+            LOGO_PATH = p
+            break
 
 # 📁 Dynamic Receipts Directory
 BASE_DIR = os.getcwd()
@@ -114,15 +102,16 @@ except Exception:
     RECEIPTS_DIR = "/tmp/Receipts"
     os.makedirs(RECEIPTS_DIR, exist_ok=True)
 
+
 def get_image_base64(image_path):
-    """Get base64 encoding of image"""
-    if image_path and os.path.exists(image_path):
+    if os.path.exists(image_path):
         try:
             with open(image_path, "rb") as img_file:
                 return base64.b64encode(img_file.read()).decode("utf-8")
         except Exception:
             return ""
     return ""
+
 
 MEAL_RATES = {
     "૧. સવારનો ચા-નાસ્તો": 500.0,
@@ -133,9 +122,6 @@ MEAL_RATES = {
 
 ALL_MEALS = list(MEAL_RATES.keys())
 
-# ==========================================
-# PAGE CONFIGURATION
-# ==========================================
 st.set_page_config(
     page_title="NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST",
     page_icon="🍲",
@@ -143,57 +129,41 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ==========================================
-# SESSION STATE INITIALIZATION
-# ==========================================
-if "selected_meals_list" not in st.session_state:
-    st.session_state["selected_meals_list"] = []
-if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = False
-if "is_operator" not in st.session_state:
-    st.session_state["is_operator"] = False
-
-# ==========================================
-# CSS STYLES
-# ==========================================
+# 🎨 CLEAN STYLING, HIDE GLITCHES & SIDE-BY-SIDE CARDS CSS
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    /* Hide Streamlit default elements */
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #FFFFFF !important;
     }
 
-    /* Apply Gujarati font to all elements */
-    label, p, span, div, h1, h2, h3, h4, .stMarkdown, .stButton, .stSelectbox, .stTextInput, .stNumberInput, .stDateInput, .stRadio, .stCheckbox {
+    label, p, span, div, h1, h2, h3, h4, .stMarkdown {
         font-family: 'Noto Sans Gujarati', sans-serif !important;
         color: #111827 !important;
     }
 
-    /* Hide system icons and glitches */
-    .material-symbols-rounded, 
-    .icon-text, 
-    [data-testid="stIcon"],
-    [data-testid="stWidgetLabel"] svg,
-    .st-emotion-cache-1wmy9hl,
-    .st-emotion-cache-1r4qj8v {
-        display: none !important;
+    [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] span {
+        color: #111827 !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
     }
 
-    /* Input styling */
     input[type="text"], input[type="password"], input[type="number"] {
+        text-transform: uppercase !important;
         background-color: #F9FAFB !important;
         color: #111827 !important;
         border: 1px solid #D1D5DB !important;
         border-radius: 6px !important;
     }
 
-    /* Hide footer and menu */
+    /* Hide unwanted system text/icons */
+    [data-testid="collapsedControl"] svg { display: block !important; }
+    button[kind="header"] svg { display: block !important; }
+
     footer, #MainMenu { display: none !important; }
 
-    /* Main container */
     .main .block-container {
         max-width: 680px !important;
         margin: 0 auto !important;
@@ -203,7 +173,6 @@ st.markdown(
         padding-right: 0.8rem !important;
     }
 
-    /* NGO Title Styles */
     .ngo-title-1 { color: #16A34A !important; font-size: 22px !important; font-weight: 900 !important; margin: 0; line-height: 1.15; }
     .ngo-title-2 { color: #0284C7 !important; font-size: 17px !important; font-weight: 800 !important; margin: 0; line-height: 1.15; }
     .ngo-title-3 { color: #1E3A8A !important; font-size: 17px !important; font-weight: 800 !important; margin: 0; line-height: 1.15; }
@@ -211,50 +180,64 @@ st.markdown(
 
     /* Meal Card Styles */
     .meal-card {
-        background-color: #F9FAFB;
-        border: 2px solid #D1D5DB;
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 8px;
+        border-radius: 10px;
+        padding: 15px 10px;
+        margin-bottom: 10px;
         text-align: center;
-        height: 95px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        min-height: 100px;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        transition: all 0.3s ease;
-        cursor: pointer;
+        align-items: center;
     }
     .meal-card:hover {
-        border-color: #2563EB;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .meal-card-available {
+        background-color: #FFFFFF;
+        border: 2px solid #D1D5DB;
     }
     .meal-card-selected {
         background-color: #EFF6FF;
-        border-color: #2563EB;
+        border: 3px solid #2563EB;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     }
     .meal-card-booked {
         background-color: #FEE2E2;
-        border-color: #EF4444;
-        opacity: 0.8;
+        border: 2px solid #EF4444;
+        opacity: 0.6;
+        cursor: not-allowed;
     }
     .meal-title {
-        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
         color: #1E3A8A;
-        font-size: 14px;
-        font-weight: bold;
+        margin: 0 0 4px 0;
     }
     .meal-price {
-        margin: 2px 0;
-        color: #047857;
+        font-size: 16px;
         font-weight: 800;
-        font-size: 13.5px;
+        color: #047857;
+        margin: 4px 0;
     }
     .meal-status {
-        font-size: 11px;
-        font-weight: bold;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+    .meal-status-selected {
+        color: #1D4ED8;
+    }
+    .meal-status-available {
+        color: #059669;
+    }
+    .meal-status-booked {
+        color: #991B1B;
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
         .main .block-container {
             max-width: 100% !important;
@@ -266,42 +249,22 @@ st.markdown(
             font-size: 15px !important;
             padding: 10px !important;
         }
-        .ngo-title-1 { font-size: 18px !important; }
-        .ngo-title-2 { font-size: 14px !important; }
-        .ngo-title-3 { font-size: 14px !important; }
-    }
-
-    /* Print Styles */
-    @media print {
-        @page { 
-            size: A6 portrait; 
-            margin: 0; 
-        }
-        .print-button, .stButton, .stDownloadButton {
-            display: none !important;
-        }
-        body { 
-            background-color: #ffffff !important; 
-            padding: 0 !important; 
-            margin: 0 !important; 
-        }
-        .receipt-box { 
-            border: 1px solid #000 !important; 
-            box-shadow: none !important; 
-            width: 100% !important; 
-            border-radius: 0 !important; 
-        }
+        .ngo-title-1 { font-size: 18px; }
+        .ngo-title-2 { font-size: 14px; }
+        .ngo-title-3 { font-size: 14px; }
+        .meal-title { font-size: 13px; }
+        .meal-price { font-size: 14px; }
     }
     </style>
-    """,
+""",
     unsafe_allow_html=True,
 )
+
 
 # ==========================================
 # 📄 AUTO-SAVE BACKEND PDF FUNCTION
 # ==========================================
 def auto_save_pdf_to_folder(booking_info):
-    """Generate and save PDF receipt"""
     try:
         clean_donor_name = (
             "".join(
@@ -319,12 +282,10 @@ def auto_save_pdf_to_folder(booking_info):
         c = canvas.Canvas(file_path, pagesize=A6)
         width, height = A6
 
-        # Border
         c.setStrokeColorRGB(0.12, 0.23, 0.54)
         c.setLineWidth(1.5)
         c.rect(5, 5, width - 10, height - 10)
 
-        # Title
         c.setFont("Helvetica-Bold", 10)
         c.setFillColorRGB(0.08, 0.64, 0.29)
         c.drawString(70, height - 22, "NARMADESHWAR")
@@ -339,7 +300,6 @@ def auto_save_pdf_to_folder(booking_info):
         c.setFillColorRGB(0.3, 0.3, 0.3)
         c.drawString(70, height - 53, "Reg. No: F/5155/Mehsana")
 
-        # Receipt details
         c.setFont("Helvetica", 8)
         c.setFillColorRGB(0, 0, 0)
         c.drawString(
@@ -374,10 +334,9 @@ def auto_save_pdf_to_folder(booking_info):
             c.setFont("Helvetica-Bold", 8)
             c.drawString(12, y, label)
             c.setFont("Helvetica", 8)
-            c.drawString(75, y, val[:25] if val else "")
+            c.drawString(75, y, val[:25])
             y -= line_height
 
-        # Footer
         c.setFont("Helvetica-Oblique", 7)
         c.setFillColorRGB(0.02, 0.59, 0.41)
         c.drawCentredString(
@@ -387,14 +346,13 @@ def auto_save_pdf_to_folder(booking_info):
         c.save()
         return file_path
     except Exception as e:
-        st.error(f"PDF Generation Error: {str(e)}")
         return None
+
 
 # ==========================================
 # 🎯 COMPACT PRINTABLE HTML RECEIPT
 # ==========================================
 def render_html_receipt(booking_info):
-    """Render HTML receipt with print functionality"""
     logo_b64 = get_image_base64(LOGO_PATH)
     logo_html = (
         f'<img src="data:image/png;base64,{logo_b64}" class="receipt-logo" />'
@@ -497,16 +455,18 @@ def render_html_receipt(booking_info):
                 font-weight: bold;
                 cursor: pointer;
             }}
-            .print-button:hover {{
-                background-color: #1e40af;
+            @media print {{
+                @page {{ size: A6 portrait; margin: 0; }}
+                .print-button {{ display: none; }}
+                body {{ background-color: #ffffff; padding: 0; margin: 0; }}
+                .receipt-box {{ border: 1px solid #000; box-shadow: none; width: 100%; border-radius: 0; }}
             }}
         </style>
         <script>
             function printReceipt() {{
+                try {{ window.parent.document.title = "{pdf_file_name}"; }} catch(e) {{}}
                 document.title = "{pdf_file_name}";
-                setTimeout(function() {{
-                    window.print();
-                }}, 300);
+                window.print();
             }}
         </script>
     </head>
@@ -540,43 +500,39 @@ def render_html_receipt(booking_info):
     """
     components.html(html_code, height=530, scrolling=True)
 
+
 # ==========================================
 # 🎯 CLEAN HEADER DESIGN
 # ==========================================
-def display_header():
-    """Display NGO header with logo"""
-    logo_b64_main = get_image_base64(LOGO_PATH)
+logo_b64_main = get_image_base64(LOGO_PATH)
 
-    if logo_b64_main:
-        st.markdown(
-            f"""
-            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px;">
-                <img src="data:image/png;base64,{logo_b64_main}" style="height: 75px; width: auto; object-fit: contain; flex-shrink: 0;" />
-                <div style="display: flex; flex-direction: column; justify-content: center;">
-                    <p class="ngo-title-1">NARMADESHWAR</p>
-                    <p class="ngo-title-2">VIKLANG VIKAAS</p>
-                    <p class="ngo-title-3">MANAV SEVA TRUST</p>
-                    <p class="ngo-reg">Reg. No.: {NGO_REG_NO}</p>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.warning("⚠️ Logo not found. Please upload 'rg_ngo_logo.png'")
-        st.markdown(
-            f"""
-            <div style="text-align: center; margin-bottom: 5px;">
+if logo_b64_main:
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px;">
+            <img src="data:image/png;base64,{logo_b64_main}" style="height: 75px; width: auto; object-fit: contain; flex-shrink: 0;" />
+            <div style="display: flex; flex-direction: column; justify-content: center;">
                 <p class="ngo-title-1">NARMADESHWAR</p>
                 <p class="ngo-title-2">VIKLANG VIKAAS</p>
                 <p class="ngo-title-3">MANAV SEVA TRUST</p>
                 <p class="ngo-reg">Reg. No.: {NGO_REG_NO}</p>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-display_header()
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        f"""
+        <div style="text-align: center; margin-bottom: 5px;">
+            <p class="ngo-title-1">NARMADESHWAR</p>
+            <p class="ngo-title-2">VIKLANG VIKAAS</p>
+            <p class="ngo-title-3">MANAV SEVA TRUST</p>
+            <p class="ngo-reg">Reg. No.: {NGO_REG_NO}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 st.markdown(
     "<p style='text-align: center; color: #4B5563 !important; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
@@ -611,7 +567,6 @@ else:
 
 st.sidebar.markdown("---")
 
-# Menu based on user role
 if st.session_state.get("is_admin", False):
     menu = [
         "🍲 જમણવાર બુકિંગ",
@@ -636,12 +591,11 @@ else:
 choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
 
 # ==========================================
-# 🍽️ MEAL BOOKING MODULE
+# ૧. જમણવાર બુકિંગ મોડ્યુલ (CLICKABLE CARDS - NO EXTRA BUTTONS)
 # ==========================================
 if choice == "🍲 જમણવાર બુકિંગ":
     st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
 
-    # Date selection
     if st.session_state.get("is_admin", False):
         st.info(
             "🔓 એડમિન મોડ ચાલુ છે: તમે પાછલી (જૂની) તારીખ પણ પસંદ કરી શકો છો."
@@ -654,82 +608,79 @@ if choice == "🍲 જમણવાર બુકિંગ":
 
     date_str = str(booking_date)
 
-    # Get booked meals for the date
-    try:
-        cursor.execute(
-            "SELECT meal_types FROM bookings WHERE booking_date = ?", (date_str,)
-        )
-        booked_records = cursor.fetchall()
-        booked_meals = []
-        for row in booked_records:
-            if row[0]:
-                for meal in row[0].split(", "):
-                    if meal.strip():
-                        booked_meals.append(meal.strip())
-    except Exception as e:
-        st.error(f"Database Error: {str(e)}")
-        booked_meals = []
+    cursor.execute(
+        "SELECT meal_types FROM bookings WHERE booking_date = ?", (date_str,)
+    )
+    booked_records = cursor.fetchall()
+    booked_meals = [
+        m for row in booked_records if row[0] for m in row[0].split(", ")
+    ]
 
     st.write(
-        "### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો (કાર્ડ પર ટચ/ક્લિક કરો) *"
+        "### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો (કાર્ડ પર ક્લિક કરીને સિલેક્ટ કરો) *"
     )
 
-    # Reset selection if needed
     if "selected_meals_list" not in st.session_state:
         st.session_state["selected_meals_list"] = []
 
-    # Display meal cards in 2 columns
-    c_card1, c_card2 = st.columns(2)
-    card_cols = [c_card1, c_card2, c_card1, c_card2]
+    # Display meal cards - 2 columns
+    col1, col2 = st.columns(2)
 
     for idx, meal in enumerate(ALL_MEALS):
         rate_display = int(MEAL_RATES[meal])
         is_booked = meal in booked_meals
 
-        with card_cols[idx]:
+        with col1 if idx % 2 == 0 else col2:
             if is_booked:
+                # Booked meal - Disabled card
                 st.markdown(
                     f"""
                     <div class="meal-card meal-card-booked">
-                        <h4 class="meal-title" style="color: #991B1B;">❌ {meal}</h4>
-                        <p class="meal-price" style="color: #B91C1C;">₹{rate_display} (બુક થયેલ)</p>
+                        <div class="meal-title" style="color: #991B1B;">❌ {meal}</div>
+                        <div class="meal-price" style="color: #B91C1C;">₹{rate_display}</div>
+                        <div class="meal-status meal-status-booked">✖ બુક થયેલ છે</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
             else:
                 is_selected = meal in st.session_state["selected_meals_list"]
-                card_class = "meal-card meal-card-selected" if is_selected else "meal-card"
-                status_text = "✓ સિલેક્ટ થયેલ" if is_selected else "સિલેક્ટ કરવા ક્લિક કરો"
-                status_color = "#1D4ED8" if is_selected else "#059669"
-
-                st.markdown(
-                    f"""
-                    <div class="{card_class}">
-                        <h4 class="meal-title">{meal}</h4>
-                        <p class="meal-price">₹{rate_display}</p>
-                        <span class="meal-status" style="color: {status_color};">{status_text}</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                # Toggle button
-                if is_selected:
-                    if st.button("હટાવો (Remove)", key=f"tog_remove_{idx}", type="secondary"):
+                
+                # Determine card class and status
+                card_class = "meal-card meal-card-selected" if is_selected else "meal-card meal-card-available"
+                status_class = "meal-status-selected" if is_selected else "meal-status-available"
+                status_text = "✅ સિલેક્ટ થયેલ" if is_selected else "🖱️ સિલેક્ટ કરવા ક્લિક કરો"
+                
+                # Show card with click handler
+                # We use a button with custom content
+                button_label = f"{meal}\n₹{rate_display}\n{status_text}"
+                
+                if st.button(
+                    button_label,
+                    key=f"meal_btn_{idx}",
+                    use_container_width=True,
+                    type="primary" if is_selected else "secondary",
+                ):
+                    if is_selected:
                         st.session_state["selected_meals_list"].remove(meal)
-                        st.rerun()
-                else:
-                    if st.button("સિલેક્ટ કરો", key=f"tog_select_{idx}", type="primary"):
+                    else:
                         st.session_state["selected_meals_list"].append(meal)
-                        st.rerun()
+                    st.rerun()
 
     # Collect selected meals
-    selected_meals = [meal for meal in ALL_MEALS if meal in st.session_state["selected_meals_list"] and meal not in booked_meals]
+    selected_meals = []
+    for meal in ALL_MEALS:
+        if meal in st.session_state["selected_meals_list"] and meal not in booked_meals:
+            selected_meals.append(meal)
 
     st.markdown("---")
 
     if selected_meals:
+        st.success(f"✅ સિલેક્ટ થયેલ જમણવાર: {', '.join(selected_meals)}")
+        st.write(f"💰 કુલ રકમ: ₹{sum(MEAL_RATES[m] for m in selected_meals):,.2f}")
+        
+        st.markdown("---")
+        
         meal_prep_type = st.radio(
             "૩. પ્રકાર *",
             ["૧. સંસ્થામાં બનાવવાનું છે", "૨. તૈયાર બનાવીને લાવશે"],
@@ -821,94 +772,80 @@ if choice == "🍲 જમણવાર બુકિંગ":
             if not raw_donor_name or not donor_phone:
                 st.error("❌ કૃપા કરીને દાતાશ્રીનું નામ અને મોબાઈલ નંબર દાખલ કરો.")
             else:
-                try:
-                    meals_str = ", ".join(selected_meals)
+                meals_str = ", ".join(selected_meals)
 
-                    cursor.execute(
-                        """
-                        INSERT INTO bookings (donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type, utr_number)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                        (
-                            donor_name,
-                            donor_phone,
-                            service_for_name,
-                            date_str,
-                            meals_str,
-                            meal_prep_type,
-                            final_amount,
-                            payment_status,
-                            payment_type,
-                            utr_number,
-                        ),
-                    )
-                    conn.commit()
-                    last_id = cursor.lastrowid
-                    st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વક સેવ થઈ ગયું છે!")
+                cursor.execute(
+                    """
+                    INSERT INTO bookings (donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type, utr_number)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        donor_name,
+                        donor_phone,
+                        service_for_name,
+                        date_str,
+                        meals_str,
+                        meal_prep_type,
+                        final_amount,
+                        payment_status,
+                        payment_type,
+                        utr_number,
+                    ),
+                )
+                conn.commit()
+                last_id = cursor.lastrowid
+                st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વક સેવ થઈ ગયું છે!")
 
-                    # Clear selected meals
-                    st.session_state["selected_meals_list"] = []
+                st.session_state["selected_meals_list"] = []
 
-                    booking_dict = {
-                        "id": last_id,
-                        "donor_name": donor_name,
-                        "phone": donor_phone,
-                        "service_for_name": service_for_name,
-                        "booking_date": date_str,
-                        "meal_types": meals_str,
-                        "meal_prep_type": meal_prep_type,
-                        "amount": final_amount,
-                        "payment_status": payment_status,
-                        "payment_type": payment_type,
-                    }
+                booking_dict = {
+                    "id": last_id,
+                    "donor_name": donor_name,
+                    "phone": donor_phone,
+                    "service_for_name": service_for_name,
+                    "booking_date": date_str,
+                    "meal_types": meals_str,
+                    "meal_prep_type": meal_prep_type,
+                    "amount": final_amount,
+                    "payment_status": payment_status,
+                    "payment_type": payment_type,
+                }
 
-                    # Save PDF
-                    try:
-                        saved_path = auto_save_pdf_to_folder(booking_dict)
-                        if saved_path:
-                            st.toast(f"💾 PDF Auto-saved: {os.path.basename(saved_path)}", icon="✅")
-                        else:
-                            st.warning("⚠️ PDF સેવ થઈ શક્યું નહીં, પણ ડેટા સેવ થઈ ગયો છે")
-                    except Exception as pdf_error:
-                        st.warning(f"⚠️ PDF Error: {str(pdf_error)}")
+                saved_path = auto_save_pdf_to_folder(booking_dict)
+                if saved_path:
+                    st.toast(f"💾 PDF Auto-saved: {saved_path}", icon="✅")
 
-                    # Display receipt
-                    st.write("### 📄 જમણવાર પાવતી (Receipt)")
-                    render_html_receipt(booking_dict)
+                st.write("### 📄 જમણવાર પાવતી (Receipt)")
+                render_html_receipt(booking_dict)
 
-                    # WhatsApp message
-                    msg = (
-                        f"નમસ્તે NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST,%0A%0A"
-                        f"મેં જમણવાર બુક કર્યો છે:%0A"
-                        f"👤 દાતાશ્રી: {donor_name}%0A"
-                        f"🙏 સેવા નામ: {service_for_name}%0A"
-                        f"📅 તારીખ: {date_str}%0A"
-                        f"🍲 જમણવાર: {meals_str}%0A"
-                        f"🥣 પ્રકાર: {meal_prep_type}%0A"
-                        f"💰 રકમ: ₹{final_amount}%0A"
-                        f"💳 પેમેન્ટ સ્ટેટસ: {payment_status}"
-                    )
+                msg = (
+                    f"નમસ્તે NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST,%0A%0A"
+                    f"મેં જમણવાર બુક કર્યો છે:%0A"
+                    f"👤 દાતાશ્રી: {donor_name}%0A"
+                    f"🙏 સેવા નામ: {service_for_name}%0A"
+                    f"📅 તારીખ: {date_str}%0A"
+                    f"🍲 જમણવાર: {meals_str}%0A"
+                    f"🥣 પ્રકાર: {meal_prep_type}%0A"
+                    f"💰 રકમ: ₹{final_amount}%0A"
+                    f"💳 પેમેન્ટ સ્ટેટસ: {payment_status}"
+                )
 
-                    encoded_msg = urllib.parse.quote(msg)
-                    wa_url = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={encoded_msg}"
-                    
-                    st.markdown(
-                        f"""
-                        <a href="{wa_url}" target="_blank">
-                            <button style="background-color: #25D366; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px;">
-                                📲 WhatsApp પર કન્ફર્મેશન મોકલો
-                            </button>
-                        </a>
-                    """,
-                        unsafe_allow_html=True,
-                    )
-                except Exception as e:
-                    st.error(f"❌ Booking Error: {str(e)}")
+                wa_url = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={msg}"
+                st.markdown(
+                    f"""
+                    <a href="{wa_url}" target="_blank">
+                        <button style="background-color: #25D366; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px;">
+                            📲 WhatsApp પર કન્ફર્મેશન મોકલો
+                        </button>
+                    </a>
+                """,
+                    unsafe_allow_html=True,
+                )
     else:
         st.info("💡 કૃપા કરીને ઉપરના કાર્ડ્સમાંથી કોઈપણ જમણવાર પસંદ કરો.")
 
 # ==========================================
-# 🎁 DONATION MODULE
+# ૨. સામાન્ય દાન (Donation)
 # ==========================================
 elif choice == "🎁 સામાન્ય દાન (Donation)":
     st.subheader("🎁 સામાન્ય દાન સ્વીકાર ફોર્મ")
@@ -952,28 +889,25 @@ elif choice == "🎁 સામાન્ય દાન (Donation)":
             if not raw_d_name or d_amount <= 0:
                 st.error("❌ કૃપા કરીને દાતાનું નામ અને યોગ્ય રકમ નાખો.")
             else:
-                try:
-                    cursor.execute(
-                        """
-                        INSERT INTO donations (donor_name, phone, donation_type, amount, payment_mode, utr_number)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                        (
-                            d_name,
-                            d_phone if d_phone else "N/A",
-                            d_type,
-                            d_amount,
-                            d_mode,
-                            d_utr if d_utr else "N/A",
-                        ),
-                    )
-                    conn.commit()
-                    st.success(f"✅ {d_name} નું ₹{d_amount} નું દાન નોંધાઈ ગયું છે. ધન્યવાદ!")
-                except Exception as e:
-                    st.error(f"❌ Donation Error: {str(e)}")
+                cursor.execute(
+                    """
+                    INSERT INTO donations (donor_name, phone, donation_type, amount, payment_mode, utr_number)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        d_name,
+                        d_phone,
+                        d_type,
+                        d_amount,
+                        d_mode,
+                        d_utr if d_utr else "N/A",
+                    ),
+                )
+                conn.commit()
+                st.success(f"✅ {d_name} નું ₹{d_amount} નું દાન નોંધાઈ ગયું છે. ધન્યવાદ!")
 
 # ==========================================
-# 💸 EXPENSES MODULE
+# ૩. ખર્ચ મેનેજમેન્ટ (Expenses)
 # ==========================================
 elif choice == "💸 ખર્ચની નોંધ (Expenses)":
     st.subheader("💸 NGO રોજિંદો ખર્ચ")
@@ -1000,21 +934,18 @@ elif choice == "💸 ખર્ચની નોંધ (Expenses)":
             if not e_desc or e_amount <= 0:
                 st.error("❌ વિગત અને રકમ સાચી દાખલ કરો.")
             else:
-                try:
-                    cursor.execute(
-                        """
-                        INSERT INTO expenses (expense_date, category, description, amount)
-                        VALUES (?, ?, ?, ?)
-                    """,
-                        (str(e_date), e_cat, e_desc.upper(), e_amount),
-                    )
-                    conn.commit()
-                    st.success("✅ ખર્ચ સફળતાપૂર્વક નોંધાઈ ગયો.")
-                except Exception as e:
-                    st.error(f"❌ Expense Error: {str(e)}")
+                cursor.execute(
+                    """
+                    INSERT INTO expenses (expense_date, category, description, amount)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (str(e_date), e_cat, e_desc.upper(), e_amount),
+                )
+                conn.commit()
+                st.success("✅ ખર્ચ સફળતાપૂર્વક નોંધાઈ ગયો.")
 
 # ==========================================
-# 📦 INVENTORY MODULE
+# ૪. સ્ટોક મેનેજમેન્ટ (Stock In / Out)
 # ==========================================
 elif choice == "📦 અનાજ & સ્ટોક (Inventory)":
     st.subheader("📦 અનાજ અને વસ્તુઓનો સ્ટોક (Stock In/Out)")
@@ -1046,185 +977,150 @@ elif choice == "📦 અનાજ & સ્ટોક (Inventory)":
                 if not item_name or qty <= 0:
                     st.error("❌ કૃપા કરીને વસ્તુનું નામ અને સાચો જથ્થો લખો.")
                 else:
-                    try:
-                        trans_code = "IN" if "IN" in t_type else "OUT"
-                        cursor.execute(
-                            """
-                            INSERT INTO inventory (item_name, trans_type, quantity, unit, entry_date, remarks)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                        """,
-                            (
-                                item_name.strip().upper(),
-                                trans_code,
-                                qty,
-                                unit,
-                                str(i_date),
-                                remarks.upper() if remarks else "",
-                            ),
-                        )
-                        conn.commit()
-                        st.success("✅ સ્ટોક એન્ટ્રી સફળતાપૂર્વક થઈ ગઈ!")
-                    except Exception as e:
-                        st.error(f"❌ Inventory Error: {str(e)}")
+                    trans_code = "IN" if "IN" in t_type else "OUT"
+                    cursor.execute(
+                        """
+                        INSERT INTO inventory (item_name, trans_type, quantity, unit, entry_date, remarks)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                        (
+                            item_name.strip().upper(),
+                            trans_code,
+                            qty,
+                            unit,
+                            str(i_date),
+                            remarks.upper(),
+                        ),
+                    )
+                    conn.commit()
+                    st.success("✅ સ્ટોક એન્ટ્રી સફળતાપૂર્વક થઈ ગઈ!")
 
     with tab2:
         st.write("### 📈 વર્તમાન સ્ટોક સ્ટેટસ")
-        try:
-            df_inv = pd.read_sql_query("SELECT * FROM inventory ORDER BY id DESC", conn)
+        df_inv = pd.read_sql_query("SELECT * FROM inventory", conn)
 
-            if not df_inv.empty:
-                summary = []
-                for item in df_inv["item_name"].unique():
-                    item_data = df_inv[df_inv["item_name"] == item]
-                    total_in = item_data[item_data["trans_type"] == "IN"][
-                        "quantity"
-                    ].sum()
-                    total_out = item_data[item_data["trans_type"] == "OUT"][
-                        "quantity"
-                    ].sum()
-                    balance = total_in - total_out
-                    unit_name = item_data["unit"].iloc[-1]
+        if not df_inv.empty:
+            summary = []
+            for item in df_inv["item_name"].unique():
+                item_data = df_inv[df_inv["item_name"] == item]
+                total_in = item_data[item_data["trans_type"] == "IN"][
+                    "quantity"
+                ].sum()
+                total_out = item_data[item_data["trans_type"] == "OUT"][
+                    "quantity"
+                ].sum()
+                balance = total_in - total_out
+                unit_name = item_data["unit"].iloc[-1]
 
-                    summary.append(
-                        {
-                            "વસ્તુનું નામ": item,
-                            "કુલ આવક (IN)": f"{total_in:.1f} {unit_name}",
-                            "કુલ જાવક (OUT)": f"{total_out:.1f} {unit_name}",
-                            "હાલનો સ્ટોક": f"{balance:.1f} {unit_name}",
-                        }
-                    )
+                summary.append(
+                    {
+                        "વસ્તુનું નામ": item,
+                        "કુલ આવક (IN)": total_in,
+                        "કુલ જાવક (OUT)": total_out,
+                        "હાલનો સ્ટોક (Balance)": balance,
+                        "એકમ": unit_name,
+                    }
+                )
 
-                st.dataframe(pd.DataFrame(summary), use_container_width=True)
-                
-                # Show recent entries
-                st.write("### 📋 તાજેતરની એન્ટ્રીઓ")
-                st.dataframe(df_inv.head(10), use_container_width=True)
-            else:
-                st.info("હજુ સુધી કોઈ સ્ટોક એન્ટ્રી કરવામાં આવી નથી.")
-        except Exception as e:
-            st.error(f"❌ Error loading inventory: {str(e)}")
+            st.dataframe(pd.DataFrame(summary), use_container_width=True)
+        else:
+            st.info("હજુ સુધી કોઈ સ્ટોક એન્ટ્રી કરવામાં આવી નથી.")
 
 # ==========================================
-# 📊 ADMIN DASHBOARD
+# ૫. એડમિન ડેશબોર્ડ (MASTER ADMIN ONLY)
 # ==========================================
 elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ":
     st.subheader("🔒 માસ્ટર એડમિન પેનલ")
 
-    try:
-        # Financial summary
-        c_jmn = cursor.execute(
-            "SELECT SUM(amount) FROM bookings"
-        ).fetchone()[0] or 0.0
-        c_don = cursor.execute(
-            "SELECT SUM(amount) FROM donations"
-        ).fetchone()[0] or 0.0
-        tot_inc = c_jmn + c_don
+    c_jmn = cursor.execute(
+        "SELECT SUM(amount) FROM bookings"
+    ).fetchone()[0] or 0.0
+    c_don = cursor.execute(
+        "SELECT SUM(amount) FROM donations"
+    ).fetchone()[0] or 0.0
+    tot_inc = c_jmn + c_don
 
-        tot_exp = cursor.execute(
-            "SELECT SUM(amount) FROM expenses"
-        ).fetchone()[0] or 0.0
-        net_bal = tot_inc - tot_exp
+    tot_exp = cursor.execute(
+        "SELECT SUM(amount) FROM expenses"
+    ).fetchone()[0] or 0.0
+    net_bal = tot_inc - tot_exp
 
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("🍲 જમણવાર આવક", f"₹ {c_jmn:,.2f}")
-        m2.metric("🎁 સામાન્ય દાન", f"₹ {c_don:,.2f}")
-        m3.metric("📤 કુલ ખર્ચ", f"₹ {tot_exp:,.2f}")
-        m4.metric("💵 હાથ પર બાકી (Net)", f"₹ {net_bal:,.2f}")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("🍲 જમણવાર આવક", f"₹ {c_jmn:,.2f}")
+    m2.metric("🎁 સામાન્ય દાન", f"₹ {c_don:,.2f}")
+    m3.metric("📤 કુલ ખર્ચ", f"₹ {tot_exp:,.2f}")
+    m4.metric("💵 હાથ પર બાકી (Net)", f"₹ {net_bal:,.2f}")
 
-        st.markdown("---")
-        st.write("### 📄 જૂની પાવતી / રસીદ જોઈને પ્રિન્ટ કરો")
+    st.markdown("---")
+    st.write("### 📄 જૂની પાવતી / રસીદ જોઈને પ્રિન્ટ કરો")
 
-        cursor.execute(
-            "SELECT id, donor_name, booking_date FROM bookings ORDER BY id DESC"
+    cursor.execute(
+        "SELECT id, donor_name, booking_date FROM bookings ORDER BY id DESC"
+    )
+    all_bookings = cursor.fetchall()
+
+    if all_bookings:
+        booking_options = {
+            f"રસીદ નં #{b[0]} - {b[1]} (તારીખ: {b[2]})": b[0] for b in all_bookings
+        }
+        selected_receipt_label = st.selectbox(
+            "પ્રિન્ટ કરવા માટે જૂની રસીદ પસંદ કરો:",
+            list(booking_options.keys()),
         )
-        all_bookings = cursor.fetchall()
+        selected_id = booking_options[selected_receipt_label]
 
-        if all_bookings:
-            booking_options = {
-                f"રસીદ નં #{b[0]} - {b[1]} (તારીખ: {b[2]})": b[0] for b in all_bookings
-            }
-            selected_receipt_label = st.selectbox(
-                "પ્રિન્ટ કરવા માટે જૂની રસીદ પસંદ કરો:",
-                list(booking_options.keys()),
+        if selected_id:
+            cursor.execute(
+                "SELECT id, donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type FROM bookings WHERE id = ?",
+                (selected_id,),
             )
-            selected_id = booking_options[selected_receipt_label]
+            rec = cursor.fetchone()
+            if rec:
+                receipt_dict = {
+                    "id": rec[0],
+                    "donor_name": rec[1],
+                    "phone": rec[2],
+                    "service_for_name": rec[3],
+                    "booking_date": rec[4],
+                    "meal_types": rec[5],
+                    "meal_prep_type": rec[6],
+                    "amount": rec[7],
+                    "payment_status": rec[8],
+                    "payment_type": rec[9],
+                }
+                render_html_receipt(receipt_dict)
+    else:
+        st.info("હજુ સુધી કોઈ બુકિંગ નોંધાયેલ નથી.")
 
-            if selected_id:
-                cursor.execute(
-                    "SELECT id, donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type FROM bookings WHERE id = ?",
-                    (selected_id,),
-                )
-                rec = cursor.fetchone()
-                if rec:
-                    receipt_dict = {
-                        "id": rec[0],
-                        "donor_name": rec[1],
-                        "phone": rec[2],
-                        "service_for_name": rec[3],
-                        "booking_date": rec[4],
-                        "meal_types": rec[5],
-                        "meal_prep_type": rec[6],
-                        "amount": rec[7],
-                        "payment_status": rec[8],
-                        "payment_type": rec[9],
-                    }
-                    render_html_receipt(receipt_dict)
-        else:
-            st.info("હજુ સુધી કોઈ બુકિંગ નોંધાયેલ નથી.")
+    st.markdown("---")
+    st.write("### 📋 જમણવાર બુકિંગ લિસ્ટ")
+    df_b = pd.read_sql_query(
+        "SELECT id, donor_name AS 'દાતાશ્રી', service_for_name AS 'જેમના નામે સેવા', phone AS 'મોબાઈલ', booking_date AS 'તારીખ', meal_types AS 'જમણવાર', meal_prep_type AS 'પ્રકાર', amount AS 'રકમ (₹)', payment_status AS 'Pay Status', payment_type AS 'Pay Type' FROM bookings ORDER BY id DESC",
+        conn,
+    )
+    st.dataframe(df_b, use_container_width=True)
 
-        st.markdown("---")
-        st.write("### 📋 જમણવાર બુકિંગ લિસ્ટ")
-        df_b = pd.read_sql_query(
-            "SELECT id, donor_name AS 'દાતાશ્રી', service_for_name AS 'જેમના નામે સેવા', phone AS 'મોબાઈલ', booking_date AS 'તારીખ', meal_types AS 'જમણવાર', meal_prep_type AS 'પ્રકાર', amount AS 'રકમ (₹)', payment_status AS 'Pay Status', payment_type AS 'Pay Type' FROM bookings ORDER BY id DESC",
-            conn,
+    st.markdown("---")
+    st.write("### 📥 Excel રિપોર્ટ ડાઉનલોડ કરો")
+
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        pd.read_sql_query("SELECT * FROM bookings", conn).to_excel(
+            writer, sheet_name="Jamanvar", index=False
         )
-        st.dataframe(df_b, use_container_width=True)
+        pd.read_sql_query("SELECT * FROM donations", conn).to_excel(
+            writer, sheet_name="Donations", index=False
+        )
+        pd.read_sql_query("SELECT * FROM expenses", conn).to_excel(
+            writer, sheet_name="Expenses", index=False
+        )
+        pd.read_sql_query("SELECT * FROM inventory", conn).to_excel(
+            writer, sheet_name="Inventory", index=False
+        )
 
-        st.markdown("---")
-        st.write("### 📥 Excel રિપોર્ટ ડાઉનલોડ કરો")
-
-        try:
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-                pd.read_sql_query("SELECT * FROM bookings", conn).to_excel(
-                    writer, sheet_name="Jamanvar", index=False
-                )
-                pd.read_sql_query("SELECT * FROM donations", conn).to_excel(
-                    writer, sheet_name="Donations", index=False
-                )
-                pd.read_sql_query("SELECT * FROM expenses", conn).to_excel(
-                    writer, sheet_name="Expenses", index=False
-                )
-                pd.read_sql_query("SELECT * FROM inventory", conn).to_excel(
-                    writer, sheet_name="Inventory", index=False
-                )
-            
-            buffer.seek(0)
-            st.download_button(
-                label="📥 તમામ ડેટા Excel માં ડાઉનલોડ કરો",
-                data=buffer.getvalue(),
-                file_name="ngo_master_report.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
-        except Exception as e:
-            st.error(f"❌ Excel Error: {str(e)}")
-            
-    except Exception as e:
-        st.error(f"❌ Dashboard Error: {str(e)}")
-
-# ==========================================
-# CLOSE DATABASE CONNECTION
-# ==========================================
-# Note: Connection will be closed when app stops
-# But we can add a cleanup function if needed
-
-st.sidebar.markdown("---")
-st.sidebar.markdown(
-    """
-    <div style="text-align: center; color: #6B7280; font-size: 12px; padding: 10px;">
-        <p>© NARMADESHWAR VIKLANG VIKAAS<br>MANAV SEVA TRUST</p>
-        <p style="font-size: 10px;">Version 2.0</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+    st.download_button(
+        label="📥 તમામ ડેટા Excel માં ડાઉનલોડ કરો",
+        data=buffer.getvalue(),
+        file_name="ngo_master_report.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
