@@ -72,21 +72,34 @@ CREATE TABLE IF NOT EXISTS inventory (
 conn.commit()
 
 # ==========================================
-# NGO CONFIGURATION & PATHS
+# NGO CONFIGURATION & RELATIVE PATHS (CLOUD SAFE)
 # ==========================================
 NGO_NAME = "નર્મદેશ્વર વિકલાંગ વિકાસ માનવ સેવા ટ્રસ્ટ"
 NGO_PHONE = "917377174779"
 
-LOGO_PATH = "/home/dharmesh/NGO Work/rg_ngo_logo.png"
-
+# 🖼️ Dynamic Logo Path Detection
+LOGO_PATH = "rg_ngo_logo.png"
 if not os.path.exists(LOGO_PATH):
-    if os.path.exists("/home/dharmesh/NGO Work/rg_ngo_logo.jpg"):
-        LOGO_PATH = "/home/dharmesh/NGO Work/rg_ngo_logo.jpg"
-    elif os.path.exists("/home/dharmesh/NGO Work/rg_ngo_logo.jpeg"):
-        LOGO_PATH = "/home/dharmesh/NGO Work/rg_ngo_logo.jpeg"
+    possible_paths = [
+        "/home/dharmesh/NGO Work/rg_ngo_logo.png",
+        "/home/dharmesh/NGO Work/rg_ngo_logo.jpg",
+        "/home/dharmesh/NGO Work/rg_ngo_logo.jpeg",
+        "rg_ngo_logo.jpg",
+        "rg_ngo_logo.jpeg",
+    ]
+    for p in possible_paths:
+        if os.path.exists(p):
+            LOGO_PATH = p
+            break
 
-RECEIPTS_DIR = "/home/dharmesh/NGO Work/Reciepts"
-os.makedirs(RECEIPTS_DIR, exist_ok=True)
+# 📁 Dynamic Receipts Directory (Works on both Local & Streamlit Cloud)
+BASE_DIR = os.getcwd()
+RECEIPTS_DIR = os.path.join(BASE_DIR, "Receipts")
+try:
+    os.makedirs(RECEIPTS_DIR, exist_ok=True)
+except Exception:
+    RECEIPTS_DIR = "/tmp/Receipts"
+    os.makedirs(RECEIPTS_DIR, exist_ok=True)
 
 
 def get_image_base64(image_path):
@@ -115,7 +128,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 CLEAN CSS WITH CAPITAL LETTERS FOR INPUTS
 st.markdown(
     """
     <style>
@@ -646,7 +658,6 @@ if choice == "🍲 જમણવાર બુકિંગ":
             with col_n1:
                 raw_donor_name = st.text_input("૪. દાતાશ્રીનું નામ *")
 
-            # 🔠 AUTO CAPITALIZE DONOR NAME
             donor_name = (
                 f"{d_prefix} {raw_donor_name.upper()}".strip()
                 if raw_donor_name
@@ -669,7 +680,6 @@ if choice == "🍲 જમણવાર બુકિંગ":
                     value=raw_donor_name,
                 )
 
-            # 🔠 AUTO CAPITALIZE SERVICE NAME
             service_for_name = (
                 f"{s_prefix} {raw_service_name.upper()}".strip()
                 if raw_service_name
@@ -809,7 +819,6 @@ elif choice == "🎁 સામાન્ય દાન (Donation)":
             with c_dn:
                 raw_d_name = st.text_input("દાતાનું પૂરૂં નામ *")
 
-            # 🔠 AUTO CAPITALIZE DONOR NAME
             d_name = (
                 f"{don_prefix} {raw_d_name.upper()}".strip() if raw_d_name else ""
             )
