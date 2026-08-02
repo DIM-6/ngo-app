@@ -129,48 +129,27 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 PERFECT CSS FOR DARK/LIGHT MODE & CLEAR TEXT LABELS
+# 🎨 BULLETPROOF STABLE CSS (Ensures High Contrast & Clickability)
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
-    /* Force Light background & pitch black text for high visibility */
-    .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-        background-color: #FFFFFF !important;
-    }
-
-    /* Fix ALL Label visibility */
-    label, p, span, div, h1, h2, h3, h4, .stMarkdown {
+    /* Universal Font & Text Color Enforcement */
+    html, body, [class*="css"] {
         font-family: 'Noto Sans Gujarati', sans-serif !important;
-        color: #000000 !important;
     }
 
-    /* Input Labels specific fix */
-    [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] span {
-        color: #000000 !important;
+    /* Force Dark Text on Labels so they are never invisible */
+    label, .stCheckbox span, .stRadio div {
+        color: #111827 !important;
         font-weight: 700 !important;
-        font-size: 14px !important;
+        font-size: 14.5px !important;
     }
 
-    /* Radio button text fix */
-    [data-testid="stRadioButtonGroup"] label p {
-        color: #000000 !important;
-        font-weight: 600 !important;
-    }
-
-    /* Text Inputs Styling */
     input[type="text"], input[type="password"], input[type="number"] {
         text-transform: uppercase !important;
-        background-color: #F3F4F6 !important;
-        color: #000000 !important;
-        border: 1px solid #9CA3AF !important;
-        border-radius: 6px !important;
-    }
-
-    /* Hide header icons text overlay glitches */
-    [data-testid="stSidebarNav"] span {
-        font-size: 14px !important;
+        font-weight: 600 !important;
     }
 
     footer, #MainMenu {
@@ -180,43 +159,16 @@ st.markdown(
     .main .block-container {
         max-width: 650px !important;
         margin: 0 auto !important;
-        padding-top: 0.8rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 2rem !important;
         padding-left: 0.8rem !important;
         padding-right: 0.8rem !important;
     }
 
-    /* Header Compact CSS */
-    .ngo-title-1 {
-        color: #16A34A !important;
-        font-size: 22px !important;
-        font-weight: 900 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1.1 !important;
-    }
-    .ngo-title-2 {
-        color: #0284C7 !important;
-        font-size: 17px !important;
-        font-weight: 800 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1.1 !important;
-    }
-    .ngo-title-3 {
-        color: #1E3A8A !important;
-        font-size: 17px !important;
-        font-weight: 800 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1.1 !important;
-    }
-    .ngo-reg {
-        color: #4B5563 !important;
-        font-size: 11px !important;
-        font-weight: bold !important;
-        margin: 2px 0 0 0 !important;
-    }
+    .ngo-title-1 { color: #16A34A !important; font-size: 21px !important; font-weight: 900 !important; margin: 0; line-height: 1.1; }
+    .ngo-title-2 { color: #0284C7 !important; font-size: 16px !important; font-weight: 800 !important; margin: 0; line-height: 1.1; }
+    .ngo-title-3 { color: #1E3A8A !important; font-size: 16px !important; font-weight: 800 !important; margin: 0; line-height: 1.1; }
+    .ngo-reg { color: #4B5563 !important; font-size: 11px !important; font-weight: bold; margin: 2px 0 0 0; }
 
     @media (max-width: 768px) {
         .main .block-container {
@@ -224,13 +176,11 @@ st.markdown(
             padding-left: 0.5rem !important;
             padding-right: 0.5rem !important;
         }
-
         [data-testid="column"] {
             width: 50% !important;
             flex: 1 1 50% !important;
             min-width: 45% !important;
         }
-
         .stButton button {
             width: 100% !important;
             font-size: 16px !important;
@@ -492,8 +442,8 @@ if logo_b64_main:
     st.markdown(
         f"""
         <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px;">
-            <img src="data:image/png;base64,{logo_b64_main}" style="height: 75px; width: auto; object-fit: contain; flex-shrink: 0;" />
-            <div style="display: flex; flex-direction: column; justify-content: center;">
+            <img src="data:image/png;base64,{logo_b64_main}" style="height: 70px; width: auto; object-fit: contain; flex-shrink: 0;" />
+            <div>
                 <p class="ngo-title-1">NARMADESHWAR</p>
                 <p class="ngo-title-2">VIKLANG VIKAAS</p>
                 <p class="ngo-title-3">MANAV SEVA TRUST</p>
@@ -517,7 +467,7 @@ else:
     )
 
 st.markdown(
-    "<p style='text-align: center; color: #4B5563 !important; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
+    "<p style='text-align: center; color: #4B5563; font-size: 13px; font-weight: bold; margin-top: 2px; margin-bottom: 12px;'>જમણવાર બુકિંગ | દાન સ્વીકાર | ખર્ચ નોંધ | અનાજ સ્ટોક મેનેજમેન્ટ</p>",
     unsafe_allow_html=True,
 )
 
