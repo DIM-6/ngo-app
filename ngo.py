@@ -129,77 +129,99 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 PERFECT CSS FOR TIGHT HEADER & MOBILE TOUCH FIX
+# 🎨 PERMANENT STYLING: LIGHT THEME + CLEAR SIDEBAR + EASY TOUCH
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
 
+    /* Global Body Background */
     .stApp {
         background-color: #FFFFFF !important;
-        color: #111827 !important;
+        color: #0F172A !important;
     }
 
-    p, label, input, button, h1, h2, h3, h4, .stMarkdown, .stSelectbox, .stRadio, .stCheckbox {
+    p, label, input, button, h1, h2, h3, h4, span, div {
         font-family: 'Noto Sans Gujarati', sans-serif !important;
-        color: #111827 !important;
     }
 
+    /* Auto Capitalize Text Inputs */
     input[type="text"] {
         text-transform: uppercase !important;
-        background-color: #F9FAFB !important;
-        color: #111827 !important;
+        background-color: #F8FAFC !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
     }
 
     footer, #MainMenu {
         display: none !important;
     }
 
+    /* 📌 SIDEBAR FIXES (Readable Text & Clear Contrast) */
+    [data-testid="stSidebar"] {
+        background-color: #F1F5F9 !important;
+        border-right: 2px solid #E2E8F0 !important;
+    }
+
+    [data-testid="stSidebar"] * {
+        color: #0F172A !important;
+    }
+
+    [data-testid="stSidebar"] .stRadio label {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        padding: 8px 12px !important;
+        background-color: #FFFFFF !important;
+        border-radius: 6px !important;
+        margin-bottom: 6px !important;
+        border: 1px solid #CBD5E1 !important;
+        display: block !important;
+        cursor: pointer !important;
+    }
+
+    /* Main Container Width */
     .main .block-container {
         max-width: 650px !important;
         margin: 0 auto !important;
-        padding-top: 0.8rem !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 2rem !important;
         padding-left: 0.8rem !important;
         padding-right: 0.8rem !important;
     }
 
-    /* 📱 Compact Header Style (Zero Unwanted Gap) */
+    /* Header Compact Styles */
     .ngo-title-1 {
         color: #16A34A !important;
-        font-size: 22px !important;
+        font-size: 21px !important;
         font-weight: 900 !important;
         margin: 0 !important;
         padding: 0 !important;
         line-height: 1.1 !important;
-        letter-spacing: 1px !important;
     }
     .ngo-title-2 {
         color: #0284C7 !important;
-        font-size: 17px !important;
+        font-size: 16px !important;
         font-weight: 800 !important;
         margin: 0 !important;
         padding: 0 !important;
         line-height: 1.1 !important;
-        letter-spacing: 1px !important;
     }
     .ngo-title-3 {
         color: #1E3A8A !important;
-        font-size: 17px !important;
+        font-size: 16px !important;
         font-weight: 800 !important;
         margin: 0 !important;
         padding: 0 !important;
         line-height: 1.1 !important;
-        letter-spacing: 1px !important;
     }
     .ngo-reg {
         color: #4B5563 !important;
         font-size: 11px !important;
         font-weight: bold !important;
         margin: 2px 0 0 0 !important;
-        padding: 0 !important;
     }
 
+    /* Mobile Adaptations */
     @media (max-width: 768px) {
         .main .block-container {
             max-width: 100% !important;
@@ -207,31 +229,9 @@ st.markdown(
             padding-right: 0.5rem !important;
         }
 
-        .header-container {
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center !important;
-            gap: 6px !important;
-        }
-
-        .ngo-title-1 { font-size: 20px !important; }
-        .ngo-title-2 { font-size: 16px !important; }
-        .ngo-title-3 { font-size: 16px !important; }
-
-        /* Keep Checkboxes side by side & fully clickable even in Desktop mode */
-        [data-testid="column"] {
-            width: 50% !important;
-            flex: 1 1 50% !important;
-            min-width: 45% !important;
-        }
-
-        .stCheckbox {
-            pointer-events: auto !important;
-        }
-        .stCheckbox label {
-            font-size: 13.5px !important;
-            padding: 4px 0 !important;
-        }
+        .ngo-title-1 { font-size: 19px !important; }
+        .ngo-title-2 { font-size: 15px !important; }
+        .ngo-title-3 { font-size: 15px !important; }
 
         .stButton button {
             width: 100% !important;
@@ -493,7 +493,7 @@ logo_b64_main = get_image_base64(LOGO_PATH)
 if logo_b64_main:
     st.markdown(
         f"""
-        <div class="header-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px;">
             <img src="data:image/png;base64,{logo_b64_main}" style="height: 75px; width: auto; object-fit: contain; flex-shrink: 0;" />
             <div style="display: flex; flex-direction: column; justify-content: center;">
                 <p class="ngo-title-1">NARMADESHWAR</p>
@@ -508,7 +508,7 @@ if logo_b64_main:
 else:
     st.markdown(
         f"""
-        <div class="header-container" style="text-align: center; margin-bottom: 5px;">
+        <div style="text-align: center; margin-bottom: 5px;">
             <p class="ngo-title-1">NARMADESHWAR</p>
             <p class="ngo-title-2">VIKLANG VIKAAS</p>
             <p class="ngo-title-3">MANAV SEVA TRUST</p>
@@ -572,10 +572,10 @@ else:
         "🎁 સામાન્ય દાન (Donation)",
     ]
 
-choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
+choice = st.sidebar.radio("📌 મુખ્ય મેનૂ પસંદ કરો", menu)
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ
+# ૧. જમણવાર બુકિંગ મોડ્યુલ (CARD SELECTION)
 # ==========================================
 if choice == "🍲 જમણવાર બુકિંગ":
     st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -601,20 +601,27 @@ if choice == "🍲 જમણવાર બુકિંગ":
     ]
 
     st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો *")
-    selected_meals = []
 
-    col1, col2 = st.columns(2)
-    cols = [col1, col2, col1, col2]
-
-    for idx, meal in enumerate(ALL_MEALS):
-        rate_display = int(MEAL_RATES[meal])
-        label_text = f"{meal} (₹{rate_display})"
-
-        if meal in booked_meals:
-            cols[idx].error(f"❌ {meal} (બુક થયેલ છે)")
+    available_meal_options = []
+    for m in ALL_MEALS:
+        if m in booked_meals:
+            st.error(f"❌ {m} (આ દિવસે બુક થયેલ છે)")
         else:
-            if cols[idx].checkbox(label_text, key=f"chk_{meal}"):
-                selected_meals.append(meal)
+            available_meal_options.append(f"{m} (₹{int(MEAL_RATES[m])})")
+
+    selected_card_meals = []
+    if available_meal_options:
+        selected_card_meals = st.multiselect(
+            "બોક્સ પર ક્લિક કરીને એક કે તેથી વધુ જમણવાર સિલેક્ટ કરો:",
+            options=available_meal_options,
+            placeholder="જમણવાર પસંદ કરવા માટે અહીં ક્લિક કરો...",
+        )
+
+    selected_meals = []
+    for full_opt in selected_card_meals:
+        for original_m in ALL_MEALS:
+            if original_m in full_opt:
+                selected_meals.append(original_m)
 
     st.markdown("---")
 
