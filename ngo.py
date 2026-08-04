@@ -9,8 +9,12 @@ from PIL import Image
 import streamlit as st
 import streamlit.components.v1 as components
 
+
 from reportlab.lib.pagesizes import A4, A6
 from reportlab.pdfgen import canvas
+
+st.cache_data.clear()
+st.cache_resource.clear()
 
 # ==========================================
 # DATABASE SETUP (SQLite)
