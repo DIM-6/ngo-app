@@ -1488,3 +1488,34 @@ for idx, m_item in enumerate(menu):
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 key="excel_down_btn"
             )
+
+
+import os
+
+st.write("### 🖼️ સેવ થયેલી પાવતીઓની ઇમેજિસ")
+if os.path.exists(RECEIPTS_DIR):
+  image_files = os.listdir(RECEIPTS_DIR)
+  if image_files:
+    selected_img = st.selectbox(
+        "પ્રિન્ટ અથવા જોવા માટે ઇમેજ પસંદ કરો:", image_files
+    )
+    if selected_img:
+      img_full_path = os.path.join(RECEIPTS_DIR, selected_img)
+      st.image(img_full_path, caption=selected_img, use_container_width=True)
+
+      with open(img_full_path, "rb") as file:
+        st.download_button(
+            label="📥 આ ઇમેજ ડાઉનલોડ કરો",
+            data=file,
+            file_name=selected_img,
+            mime="image/png",
+        )
+  else:
+    st.info("હજુ સુધી કોઈ ઇમેજ સેવ થઈ નથી.")
+else:
+  st.info("Receipts_Images ફોલ્ડર હજુ બન્યું નથી.")
+
+
+
+
+
