@@ -262,11 +262,6 @@ st.markdown(
         letter-spacing: 1px !important;
     }
 
-    /* ===== PASSWORD VISIBILITY HIDE FIX ===== */
-    [data-baseweb="input"] button {
-        display: none !important;
-    }
-
     @media (max-width: 768px) {
         .main .block-container {
             max-width: 100% !important;
@@ -767,11 +762,10 @@ else:
 st.markdown("---")
 
 # ==========================================
-# 🔒 TOP LOGIN & TOP NAVIGATION MENU
+# 🔒 TOP LOGIN & TOP NAVIGATION MENU (UPDATED)
 # ==========================================
 st.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
 
-# જો યુઝર પહેલેથી લોગિન થયેલ ન હોય તો જ પાસવર્ડ બૉક્સ બતાવો
 if not st.session_state.get("is_admin", False) and not st.session_state.get("is_operator", False):
     col_pwd, col_status = st.columns([2, 2])
     with col_pwd:
@@ -792,9 +786,8 @@ if not st.session_state.get("is_admin", False) and not st.session_state.get("is_
         st.rerun()
     elif login_pwd != "":
         with col_status:
-            st.error("❌ ખોટો પાးવર્ડ!")
+            st.error("❌ ખોટો પાસવર્ડ!")
 else:
-    # લોગિન થઈ ગયા પછી પાસવર્ડ બોક્સ ગાયબ થઈ જશે અને આ દેખાશે
     col_msg, col_out = st.columns([3, 1])
     with col_msg:
         if st.session_state.get("is_admin", False):
@@ -832,7 +825,23 @@ else:
     ]
 
 st.markdown("---")
-choice = st.radio("📌 મુખ્ય મેનૂ", menu, horizontal=True)
+st.markdown("### 📌 મુખ્ય મેનૂ ")
+
+if "selected_menu" not in st.session_state or st.session_state["selected_menu"] not in menu:
+    st.session_state["selected_menu"] = menu[0]
+
+# 3 Columns grid layout for buttons so it looks clean and attractive
+cols = st.columns(3)
+for idx, m_item in enumerate(menu):
+    c_idx = idx % 3
+    with cols[c_idx]:
+        is_active = (st.session_state["selected_menu"] == m_item)
+        btn_type = "primary" if is_active else "secondary"
+        if st.button(m_item, key=f"menu_card_btn_{idx}", type=btn_type, use_container_width=True):
+            st.session_state["selected_menu"] = m_item
+            st.rerun()
+
+choice = st.session_state["selected_menu"]
 st.markdown("---")
 
 # ==========================================
