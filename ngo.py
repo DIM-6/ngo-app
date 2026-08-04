@@ -151,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 CSS & JS STYLING (Fixed icon rendering and layout glitches)
+# 🎨 CLEAN CSS (Stray texts removed)
 st.markdown(
     """
     <style>
@@ -515,7 +515,7 @@ def render_html_receipt(booking_info):
 
 
 # ==========================================
-# 📜 PRINTABLE HTML LETTER (Subject First, then Reference)
+# 📜 PRINTABLE HTML LETTER
 # ==========================================
 def render_html_letter(letter_info):
     logo_b64 = get_image_base64(LOGO_PATH)
