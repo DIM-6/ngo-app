@@ -151,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS WITH BALANCED LEFT-ALIGNED HEADER
+# 🎨 CLEAN CSS WITH FULL WIDTH BUTTON FIX FOR LIVE APP
 st.markdown(
     """
     <style>
@@ -184,7 +184,10 @@ st.markdown(
     [data-testid="stSidebar"] { display: none !important; }
     footer, #MainMenu { display: none !important; }
 
-    /* ===== CARD BUTTON STYLING FOR JAMANVAR ===== */
+    /* ===== CARD BUTTON STYLING FIX FOR LIVE APP ===== */
+    div.stButton {
+        width: 100% !important;
+    }
     div.stButton > button {
         width: 100% !important;
         height: 95px !important;
@@ -216,7 +219,7 @@ st.markdown(
         font-size: 0.9rem !important;
     }
     
-    /* ===== HEADER STYLES (75% WIDTH, TIGHTLY GROUPED & LEFT ALIGNED) ===== */
+    /* ===== HEADER STYLES (75% WIDTH, BALANCED & LEFT-ALIGNED) ===== */
     .header-wrapper {
         display: flex;
         align-items: center;
