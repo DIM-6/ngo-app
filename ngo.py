@@ -151,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS
+# 🎨 CLEAN CSS WITH ZERO GAP BETWEEN LOGO AND TEXT
 st.markdown(
     """
     <style>
@@ -216,18 +216,21 @@ st.markdown(
         font-size: 0.9rem !important;
     }
     
-    /* ===== HEADER STYLES ===== */
+    /* ===== HEADER STYLES (75% WIDTH, ZERO GAP) ===== */
     .header-wrapper {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 15px;
+        gap: 0px;
         margin-bottom: 5px;
         border-top: 5px solid #F39C12;
         padding-top: 15px;
+        width: 75% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
     .header-wrapper img {
-        height: 75px; 
+        height: 130px !important; 
         width: auto; 
         object-fit: contain;
         flex-shrink: 0;
@@ -237,21 +240,23 @@ st.markdown(
         flex-direction: column;
         justify-content: center;
         text-align: center;
-        line-height: 1.15;
+        line-height: 1.35;
+        width: 100%;
     }
-    .h-title-1 { color: #16A34A !important; font-size: 22px !important; font-weight: 900 !important; margin: 0 !important; }
-    .h-title-2 { color: #0284C7 !important; font-size: 17px !important; font-weight: 800 !important; margin: 0 !important; }
-    .h-title-3 { color: #1E3A8A !important; font-size: 17px !important; font-weight: 800 !important; margin: 0 !important; }
-    .h-reg { color: #4B5563 !important; font-size: 11px !important; font-weight: bold !important; margin: 3px 0 0 0 !important; }
+    .h-title-1 { color: #16A34A !important; font-size: 26px !important; font-weight: 900 !important; margin: 0 !important; letter-spacing: 7px !important; }
+    .h-title-2 { color: #0284C7 !important; font-size: 19px !important; font-weight: 800 !important; margin: 0 !important; letter-spacing: 5px !important; }
+    .h-title-3 { color: #1E3A8A !important; font-size: 19px !important; font-weight: 800 !important; margin: 0 !important; letter-spacing: 5px !important; }
+    .h-reg { color: #4B5563 !important; font-size: 11px !important; font-weight: bold !important; margin: 5px 0 0 0 !important; letter-spacing: 2px !important; }
     .h-sub-text { 
         color: #4B5563 !important; 
         font-size: 13px; 
         font-weight: bold; 
-        margin-top: 4px; 
+        margin-top: 6px; 
         display: flex; 
         gap: 8px; 
         flex-wrap: wrap; 
         justify-content: center;
+        letter-spacing: 1px !important;
     }
 
     @media (max-width: 768px) {
@@ -261,14 +266,15 @@ st.markdown(
             padding-right: 0.5rem !important;
         }
         .header-wrapper {
+            width: 100% !important;
             flex-direction: column !important;
-            gap: 10px !important;
+            gap: 12px !important;
         }
         .header-wrapper img {
-            height: 60px !important;
+            height: 100px !important;
         }
-        .h-title-1 { font-size: 20px !important; }
-        .h-title-2, .h-title-3 { font-size: 15px !important; }
+        .h-title-1 { font-size: 22px !important; letter-spacing: 3px !important; }
+        .h-title-2, .h-title-3 { font-size: 16px !important; letter-spacing: 2.5px !important; }
     }
     </style>
 """,
@@ -695,7 +701,7 @@ def render_html_letter(letter_info):
 
 
 # ==========================================
-# 🎯 HEADER DESIGN
+# 🎯 HEADER DESIGN (75% WIDTH, ZERO GAP)
 # ==========================================
 logo_b64_main = get_image_base64(LOGO_PATH)
 
@@ -744,7 +750,7 @@ else:
 st.markdown("---")
 
 # ==========================================
-# 🔒 TOP LOGIN & TOP NAVIGATION MENU (CLEAN, NO EXPANDER ARROW/VISIBILITY ARTIFACTS)
+# 🔒 TOP LOGIN & TOP NAVIGATION MENU
 # ==========================================
 st.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
 col_pwd, col_status = st.columns([2, 2])
@@ -1430,7 +1436,7 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
     st.dataframe(df_b, use_container_width=True)
 
     st.markdown("---")
-    st.write("### 📥 Excel રિપોર્ટ ડાઉનલોડ કરો")
+    st.write("### 📥 ડેટા ડાઉનલોડ કરો")
 
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
