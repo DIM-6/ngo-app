@@ -9,7 +9,7 @@ from PIL import Image
 import streamlit as st
 import streamlit.components.v1 as components
 
-from reportlab.lib.pagesizes import A4, A6
+from reportlab.lib.pagesizes import A6
 from reportlab.pdfgen import canvas
 
 # ==========================================
@@ -106,13 +106,13 @@ if not os.path.exists(LOGO_PATH):
             break
 
 BASE_DIR = os.getcwd()
-RECEIPTS_DIR = os.path.join(BASE_DIR, "Receipts")
+RECEIPTS_DIR = os.path.join(BASE_DIR, "Receipts_Images")
 LETTERS_DIR = os.path.join(BASE_DIR, "Letters")
 try:
     os.makedirs(RECEIPTS_DIR, exist_ok=True)
     os.makedirs(LETTERS_DIR, exist_ok=True)
 except Exception:
-    RECEIPTS_DIR = "/tmp/Receipts"
+    RECEIPTS_DIR = "/tmp/Receipts_Images"
     LETTERS_DIR = "/tmp/Letters"
     os.makedirs(RECEIPTS_DIR, exist_ok=True)
     os.makedirs(LETTERS_DIR, exist_ok=True)
@@ -151,12 +151,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS WITH CUSTOM STYLISH MENU BUTTONS
+# 🎨 CLEAN CSS WITH STYLISH COMPACT BUTTONS
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
-    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #FFFFFF !important;
@@ -185,59 +184,42 @@ st.markdown(
     [data-testid="stSidebar"] { display: none !important; }
     footer, #MainMenu { display: none !important; }
 
-    /* ===== CARD BUTTON STYLING FIX (MEAL CARDS) ===== */
-    div.stButton {
-        width: 100% !important;
+    /* ===== GREEN PRIMARY BUTTONS (FOR SELECTED MEALS) ===== */
+    button[kind="primary"] {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #047857 !important;
+        box-shadow: 0 3px 6px rgba(16, 185, 129, 0.3) !important;
     }
+    button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    }
+
+    /* ===== COMPACT & STYLISH SUBMIT/DOWNLOAD BUTTONS ===== */
+    [data-testid="stFormSubmitButton"] > button, 
+    [data-testid="stDownloadButton"] > button {
+        border-radius: 8px !important;
+        padding: 6px 18px !important;
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+        min-height: 38px !important;
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #047857 !important;
+        box-shadow: 0 2px 5px rgba(16, 185, 129, 0.25) !important;
+    }
+
+    /* ===== CARD BUTTON STYLING FIX (MEAL CARDS) ===== */
     div.stButton > button {
-        width: 100% !important;
-        height: 95px !important;
         border-radius: 8px !important;
         font-weight: bold !important;
         font-size: 13.5px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: center !important;
         padding: 10px !important;
         white-space: pre-wrap !important;
     }
 
-    /* ===== STYLISH COMPACT MENU BUTTONS CSS ===== */
-    .ngo-menu-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-        margin: 12px 0 20px 0;
-    }
-    .ngo-menu-btn {
-        background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
-        color: #1E3A8A;
-        border: 1.5px solid #CBD5E1;
-        padding: 10px 18px;
-        border-radius: 10px;
-        font-size: 13.5px;
-        font-weight: 700;
-        text-decoration: none;
-        transition: all 0.25s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .ngo-menu-btn:hover {
-        background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
-        color: #0369A1;
-        border-color: #38BDF8;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
-    }
-    .ngo-menu-btn.active {
-        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-        color: #FFFFFF !important;
-        border: 1.5px solid #047857;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    div.stButton > button[kind="secondary"], div.stButton > button[kind="primary"] {
+        height: 95px !important;
     }
 
     /* ===== MAIN FORM SIZING FIXED ===== */
@@ -332,10 +314,12 @@ st.markdown(
 
 
 # ==========================================
-# 📄 AUTO-SAVE BACKEND PDF FUNCTION (RECEIPT)
+# 🖼️ AUTO-SAVE BACKEND IMAGE FUNCTION (RECEIPT)
 # ==========================================
-def auto_save_pdf_to_folder(booking_info):
+def auto_save_image_to_folder(booking_info):
     try:
+        from PIL import ImageDraw, ImageFont
+        
         clean_donor_name = (
             "".join(
                 c
@@ -346,74 +330,53 @@ def auto_save_pdf_to_folder(booking_info):
             .replace(" ", "_")
         )
 
-        filename = f"Receipt_No_{booking_info.get('id', 'N/A')}_{clean_donor_name}.pdf"
+        filename = f"Receipt_No_{booking_info.get('id', 'N/A')}_{clean_donor_name}.png"
         file_path = os.path.join(RECEIPTS_DIR, filename)
 
-        c = canvas.Canvas(file_path, pagesize=A6)
-        width, height = A6
+        # Create a clean white image for receipt (A6 aspect ratio resolution)
+        img_width, img_height = 800, 1100
+        image = Image.new("RGB", (img_width, img_height), color="white")
+        draw = ImageDraw.Draw(image)
 
-        c.setStrokeColorRGB(0.12, 0.23, 0.54)
-        c.setLineWidth(1.5)
-        c.rect(5, 5, width - 10, height - 10)
+        # Draw border
+        draw.rectangle([15, 15, img_width - 15, img_height - 15], outline="#1e3a8a", width=4)
 
-        c.setFont("Helvetica-Bold", 10)
-        c.setFillColorRGB(0.08, 0.64, 0.29)
-        c.drawString(70, height - 22, "NARMADESHWAR")
+        # Text drawing (Using default or basic font)
+        try:
+            font_large = ImageFont.truetype("DejaVuSans-Bold.ttf", 26)
+            font_med = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
+            font_small = ImageFont.truetype("DejaVuSans.ttf", 18)
+        except:
+            font_large = font_med = font_small = ImageFont.load_default()
 
-        c.setFillColorRGB(0.01, 0.52, 0.78)
-        c.drawString(70, height - 33, "VIKLANG VIKAAS")
+        draw.text((40, 40), NGO_NAME, fill="#16A34A", font=font_large)
+        draw.text((40, 80), f"Reg. No: {NGO_REG_NO}", fill="#4b5563", font=font_small)
+        
+        draw.line([40, 120, img_width - 40, 120], fill="#1e3a8a", width=2)
 
-        c.setFillColorRGB(0.12, 0.23, 0.54)
-        c.drawString(70, height - 44, "MANAV SEVA TRUST")
-
-        c.setFont("Helvetica", 6.5)
-        c.setFillColorRGB(0.3, 0.3, 0.3)
-        c.drawString(70, height - 53, "Reg. No: F/5155/Mehsana")
-
-        c.setFont("Helvetica", 8)
-        c.setFillColorRGB(0, 0, 0)
-        c.drawString(
-            10, height - 66, f"Receipt No: #{booking_info.get('id', 'N/A')}"
-        )
-        c.drawString(
-            width - 80,
-            height - 66,
-            f"Date: {datetime.now().strftime('%d-%m-%Y')}",
-        )
-
-        c.line(10, height - 70, width - 10, height - 70)
-
-        y = height - 85
-        line_height = 13
-
+        y = 150
         details = [
-            ("Donor:", str(booking_info["donor_name"]).upper()),
-            ("Phone:", str(booking_info["phone"])),
+            ("Receipt No:", f"#{booking_info.get('id', 'N/A')}"),
+            ("Date:", datetime.now().strftime('%d-%m-%Y')),
+            ("Donor Name:", str(booking_info["donor_name"]).upper()),
+            ("Mobile:", str(booking_info["phone"])),
             ("Service For:", str(booking_info["service_for_name"]).upper()),
             ("Meal Date:", fmt_date(booking_info["booking_date"])),
             ("Meals:", str(booking_info["meal_types"])),
-            ("Prep:", str(booking_info["meal_prep_type"])),
+            ("Prep Type:", str(booking_info["meal_prep_type"])),
             ("Amount:", f"Rs. {booking_info['amount']:,.2f}"),
-            (
-                "Mode:",
-                f"{booking_info['payment_type']} ({booking_info['payment_status']})",
-            ),
+            ("Payment:", f"{booking_info['payment_type']} ({booking_info['payment_status']})")
         ]
 
         for label, val in details:
-            c.setFont("Helvetica-Bold", 8)
-            c.drawString(12, y, label)
-            c.setFont("Helvetica", 8)
-            c.drawString(75, y, val[:25])
-            y -= line_height
+            draw.text((50, y), label, fill="#1e3a8a", font=font_med)
+            draw.text((250, y), val, fill="#111827", font=font_small)
+            y += 50
 
-        c.setFont("Helvetica-Oblique", 7)
-        c.setFillColorRGB(0.02, 0.59, 0.41)
-        c.drawCentredString(
-            width / 2, 12, "Thank you for your noble support!"
-        )
+        draw.line([40, img_height - 120, img_width - 40, img_height - 120], fill="#e2e8f0", width=2)
+        draw.text((img_width / 2 - 180, img_height - 80), "Thank you for your noble support!", fill="#059669", font=font_med)
 
-        c.save()
+        image.save(file_path)
         return file_path
     except Exception as e:
         return None
@@ -563,7 +526,7 @@ def render_html_receipt(booking_info):
             <div class="row total-row"><span>રકમ / Amount:</span><span>₹ {booking_info['amount']:,.2f}</span></div>
             <div class="row"><span class="label">પેમેન્ટ / Payment:</span><span class="value">{booking_info['payment_type']} ({booking_info['payment_status']})</span></div>
             <div class="footer">Thank you for your noble support!<br>આપના માનવસેવા યોગદાન બદલ આભાર!</div>
-            <button class="print-button" onclick="printReceipt()">🖨️ પાવતી પ્રિન્ટ કરો / PDF સેવ કરો</button>
+            <button class="print-button" onclick="printReceipt()">🖨️ પાવતી પ્રિન્ટ કરો / ઇમેજ સેવ કરો</button>
         </div>
     </body>
     </html>
@@ -862,672 +825,666 @@ else:
     ]
 
 st.markdown("---")
-st.markdown("### 📌 મુખ્ય મેનૂ")
-
-# Fixed for modern Streamlit Cloud: st.query_params
-saved_menu = st.query_params.get("menu")
-
-if saved_menu in menu:
-    choice = saved_menu
-else:
-    choice = menu[0]
-
-# Render gorgeous compact gradient buttons for menu
-menu_html = '<div class="ngo-menu-container">'
-for m_item in menu:
-    is_active = (m_item == choice)
-    active_class = " active" if is_active else ""
-    encoded_item = urllib.parse.quote(m_item)
-    menu_html += f'<a href="?menu={encoded_item}" class="ngo-menu-btn{active_class}">{m_item}</a>'
-menu_html += '</div>'
-
-st.markdown(menu_html, unsafe_allow_html=True)
-st.markdown("---")
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ
+# 📌 MAIN MENU USING NATIVE ST.TABS (TAB STYLE)
 # ==========================================
-if choice == "🍲 જમણવાર બુકિંગ":
-    st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
+tabs = st.tabs(menu)
 
-    if st.session_state.get("is_admin", False):
-        st.info("🔓 એડમિન મોડ ચાલુ છે: તમે પાછલી (જૂની) તારીખ પણ પસંદ કરી શકો છો.")
-        booking_date = st.date_input("૧. જમણવારની તારીખ પસંદ કરો *")
-    else:
-        booking_date = st.date_input("૧. જમણવારની તારીખ પસંદ કરો *", min_value=date.today())
+for idx, m_item in enumerate(menu):
+    with tabs[idx]:
+        choice = m_item
 
-    date_str = str(booking_date)
+        # ==========================================
+        # ૧. જમણવાર બુકિંગ મોડ્યુલ
+        # ==========================================
+        if choice == "🍲 જમણવાર બુકિંગ":
+            st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
 
-    cursor.execute("SELECT meal_types FROM bookings WHERE booking_date = ?", (date_str,))
-    booked_records = cursor.fetchall()
-    booked_meals = [m for row in booked_records if row[0] for m in row[0].split(", ")]
-
-    st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો (કાર્ડ પર ક્લિક કરો) *")
-
-    if "selected_meals_list" not in st.session_state:
-        st.session_state["selected_meals_list"] = []
-
-    selected_meals = []
-
-    c_card1, c_card2 = st.columns(2)
-    card_cols = [c_card1, c_card2, c_card1, c_card2]
-
-    for idx, meal in enumerate(ALL_MEALS):
-        rate_display = int(MEAL_RATES[meal])
-        is_booked = meal in booked_meals
-
-        with card_cols[idx]:
-            if is_booked:
-                st.markdown(
-                    f"""
-                    <div style="background-color: #FEE2E2; border: 2px solid #EF4444; border-radius: 8px; padding: 14px; margin-bottom: 8px; text-align: center; opacity: 0.8; height: 95px; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin: 0; color: #991B1B; font-size: 14px;">❌ {meal}</h4>
-                        <p style="margin: 4px 0 0 0; color: #B91C1C; font-weight: bold; font-size: 12px;">₹{rate_display} (બુક થયેલ)</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            if st.session_state.get("is_admin", False):
+                st.info("🔓 એડમિન મોડ ચાલુ છે: તમે પાછલી (જૂની) તારીખ પણ પસંદ કરી શકો છો.")
+                booking_date = st.date_input("૧. જમણવારની તારીખ પસંદ કરો *", key="b_date_admin")
             else:
-                is_selected = meal in st.session_state["selected_meals_list"]
-                
-                status_label = "✓ સિલેક્ટ થયેલ (હટાવવા ક્લિક કરો)" if is_selected else "સિલેક્ટ કરવા ક્લિક કરો"
-                card_button_text = f"{meal}\n₹{rate_display}\n{status_label}"
-                
-                if st.button(
-                    card_button_text, 
-                    key=f"card_btn_{idx}", 
-                    type="primary" if is_selected else "secondary",
-                    use_container_width=True
-                ):
-                    if is_selected:
-                        st.session_state["selected_meals_list"].remove(meal)
-                    else:
-                        st.session_state["selected_meals_list"].append(meal)
-                    st.rerun()
+                booking_date = st.date_input("૧. જમણવારની તારીખ પસંદ કરો *", min_value=date.today(), key="b_date_user")
 
-    for meal in ALL_MEALS:
-        if meal in st.session_state["selected_meals_list"] and meal not in booked_meals:
-            selected_meals.append(meal)
+            date_str = str(booking_date)
 
-    st.markdown("---")
+            cursor.execute("SELECT meal_types FROM bookings WHERE booking_date = ?", (date_str,))
+            booked_records = cursor.fetchall()
+            booked_meals = [m for row in booked_records if row[0] for m in row[0].split(", ")]
 
-    if selected_meals:
-        meal_prep_type = st.radio(
-            "૩. પ્રકાર *",
-            ["૧. સંસ્થામાં બનાવવાનું છે", "૨. તૈયાર બનાવીને લાવશે"],
-        )
+            st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો (એક કરતાં વધારે સિલેક્ટ કરી શકાશે) *")
 
-        prefix_options = ["શ્રી", "સ્વ.", "ગં.સ્વ.", "શ્રીમતી", "કુ."]
-
-        c1, c2 = st.columns(2)
-        with c1:
-            col_p1, col_n1 = st.columns([1, 2.5])
-            with col_p1:
-                d_prefix = st.selectbox("પ્રીફિક્સ", prefix_options, key="p_donor")
-            with col_n1:
-                raw_donor_name = st.text_input("૪. દાતાશ્રીનું નામ *")
-
-            donor_name = f"{d_prefix} {raw_donor_name.upper()}".strip() if raw_donor_name else ""
-            donor_phone = st.text_input("૫. મોબાઈલ નંબર *", max_chars=10, placeholder="9876543210")
-
-        with c2:
-            col_p2, col_n2 = st.columns([1, 2.5])
-            with col_p2:
-                s_prefix = st.selectbox("પ્રીફિક્સ", prefix_options, key="p_service")
-            with col_n2:
-                raw_service_name = st.text_input("૬. જેમના નામે સેવા આપવી હોય તેમનું નામ *", value=raw_donor_name)
-
-            service_for_name = f"{s_prefix} {raw_service_name.upper()}".strip() if raw_service_name else ""
-
-        payment_status = "N/A"
-        payment_type = "N/A"
-        utr_number = "N/A"
-        final_amount = 0.0
-
-        if meal_prep_type == "૧. સંસ્થામાં બનાવવાનું છે":
-            st.markdown("---")
-            st.write("### 💳 પેમેન્ટની માહિતી")
-
-            p_col1, p_col2 = st.columns(2)
-
-            with p_col1:
-                payment_status = st.radio(
-                    "Payment આવી ગયેલ છે? *",
-                    ["Yes (આવી ગયેલ છે)", "No (બાકી છે)"],
-                    horizontal=True,
-                )
-                payment_type = st.selectbox(
-                    "Payment Type (પેમેન્ટનો પ્રકાર) *",
-                    ["Cash (રોકડ)", "Online (UPI / QR)", "Bank Transfer"],
-                )
-
-            calculated_amt = sum(MEAL_RATES[m] for m in selected_meals)
-
-            with p_col2:
-                final_amount = st.number_input(
-                    "જમણવારની રકમ (₹) *",
-                    value=float(calculated_amt),
-                    step=50.0,
-                    format="%.2f",
-                )
-                if payment_type in ["Online (UPI / QR)", "Bank Transfer"]:
-                    utr_number = st.text_input(
-                        "UTR / Ref No (ઓપ્શનલ)",
-                        placeholder="12 અંકનો ટ્રાન્ઝેક્શન ID",
-                    )
-                    if not utr_number:
-                        utr_number = "Not Provided"
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        save_btn = st.button("💾 બુકિંગ સેવ કરો", type="primary")
-
-        if save_btn:
-            if not raw_donor_name or not donor_phone:
-                st.error("❌ કૃપા કરીને દાતાશ્રીનું નામ અને મોબાઈલ નંબર દાખલ કરો.")
-            else:
-                meals_str = ", ".join(selected_meals)
-
-                cursor.execute(
-                    """
-                    INSERT INTO bookings (donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type, utr_number)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        donor_name,
-                        donor_phone,
-                        service_for_name,
-                        date_str,
-                        meals_str,
-                        meal_prep_type,
-                        final_amount,
-                        payment_status,
-                        payment_type,
-                        utr_number,
-                    ),
-                )
-                conn.commit()
-                last_id = cursor.lastrowid
-                st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વક સેવ થઈ ગયું છે!")
-
+            if "selected_meals_list" not in st.session_state:
                 st.session_state["selected_meals_list"] = []
 
-                booking_dict = {
-                    "id": last_id,
-                    "donor_name": donor_name,
-                    "phone": donor_phone,
-                    "service_for_name": service_for_name,
-                    "booking_date": date_str,
-                    "meal_types": meals_str,
-                    "meal_prep_type": meal_prep_type,
-                    "amount": final_amount,
-                    "payment_status": payment_status,
-                    "payment_type": payment_type,
-                }
+            selected_meals = []
 
-                saved_path = auto_save_pdf_to_folder(booking_dict)
-                if saved_path:
-                    st.toast(f"💾 PDF Auto-saved: {saved_path}", icon="✅")
+            c_card1, c_card2 = st.columns(2)
+            card_cols = [c_card1, c_card2, c_card1, c_card2]
 
-                st.write("### 📄 જમણવાર પાવતી (Receipt)")
-                render_html_receipt(booking_dict)
+            for c_idx, meal in enumerate(ALL_MEALS):
+                rate_display = int(MEAL_RATES[meal])
+                is_booked = meal in booked_meals
 
-                msg = (
-                    f"નમસ્તે NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST,%0A%0A"
-                    f"મેં જમણવાર બુક કર્યો છે:%0A"
-                    f"👤 દાતાશ્રી: {donor_name}%0A"
-                    f"🙏 સેવા નામ: {service_for_name}%0A"
-                    f"📅 તારીખ: {fmt_date(date_str)}%0A"
-                    f"🍲 જમણવાર: {meals_str}%0A"
-                    f"🥣 પ્રકાર: {meal_prep_type}%0A"
-                    f"💰 રકમ: ₹{final_amount}%0A"
-                    f"💳 પેમેન્ટ સ્ટેટસ: {payment_status}"
+                with card_cols[c_idx]:
+                    if is_booked:
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #FEE2E2; border: 2px solid #EF4444; border-radius: 8px; padding: 14px; margin-bottom: 8px; text-align: center; opacity: 0.8; height: 95px; display: flex; flex-direction: column; justify-content: center;">
+                                <h4 style="margin: 0; color: #991B1B; font-size: 14px;">❌ {meal}</h4>
+                                <p style="margin: 4px 0 0 0; color: #B91C1C; font-weight: bold; font-size: 12px;">₹{rate_display} (બુક થયેલ)</p>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        is_selected = meal in st.session_state["selected_meals_list"]
+                        
+                        status_label = "✓ સિલેક્ટ થયેલ" if is_selected else "સિલેક્ટ કરવા ક્લિક કરો"
+                        card_button_text = f"{meal}\n₹{rate_display}\n{status_label}"
+                        
+                        if st.button(
+                            card_button_text, 
+                            key=f"card_btn_{idx}_{c_idx}", 
+                            type="primary" if is_selected else "secondary",
+                            use_container_width=True
+                        ):
+                            if is_selected:
+                                st.session_state["selected_meals_list"].remove(meal)
+                            else:
+                                st.session_state["selected_meals_list"].append(meal)
+                            st.rerun()
+
+            for meal in ALL_MEALS:
+                if meal in st.session_state["selected_meals_list"] and meal not in booked_meals:
+                    selected_meals.append(meal)
+
+            st.markdown("---")
+
+            if selected_meals:
+                meal_prep_type = st.radio(
+                    "૩. પ્રકાર *",
+                    ["૧. સંસ્થામાં બનાવવાનું છે", "૨. તૈયાર બનાવીને લાવશે"],
+                    key=f"prep_type_{idx}"
                 )
 
-                wa_url = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={msg}"
+                prefix_options = ["શ્રી", "સ્વ.", "ગં.સ્વ.", "શ્રીમતી", "કુ."]
+
+                c1, c2 = st.columns(2)
+                with c1:
+                    col_p1, col_n1 = st.columns([1, 2.5])
+                    with col_p1:
+                        d_prefix = st.selectbox("પ્રીફિક્સ", prefix_options, key=f"p_donor_{idx}")
+                    with col_n1:
+                        raw_donor_name = st.text_input("૪. દાતાશ્રીનું નામ *", key=f"r_donor_{idx}")
+
+                    donor_name = f"{d_prefix} {raw_donor_name.upper()}".strip() if raw_donor_name else ""
+                    donor_phone = st.text_input("૫. મોબાઈલ નંબર *", max_chars=10, placeholder="9876543210", key=f"d_phone_{idx}")
+
+                with c2:
+                    col_p2, col_n2 = st.columns([1, 2.5])
+                    with col_p2:
+                        s_prefix = st.selectbox("પ્રીફિક્સ", prefix_options, key=f"p_service_{idx}")
+                    with col_n2:
+                        raw_service_name = st.text_input("૬. જેમના નામે સેવા આપવી હોય તેમનું નામ *", value=raw_donor_name, key=f"r_service_{idx}")
+
+                    service_for_name = f"{s_prefix} {raw_service_name.upper()}".strip() if raw_service_name else ""
+
+                payment_status = "N/A"
+                payment_type = "N/A"
+                utr_number = "N/A"
+                final_amount = 0.0
+
+                if meal_prep_type == "૧. સંસ્થામાં બનાવવાનું છે":
+                    st.markdown("---")
+                    st.write("### 💳 પેમેન્ટની માહિતી")
+
+                    p_col1, p_col2 = st.columns(2)
+
+                    with p_col1:
+                        payment_status = st.radio(
+                            "Payment આવી ગયેલ છે? *",
+                            ["Yes (આવી ગયેલ છે)", "No (બાકી છે)"],
+                            horizontal=True,
+                            key=f"p_status_{idx}"
+                        )
+                        payment_type = st.selectbox(
+                            "Payment Type (પેમેન્ટનો પ્રકાર) *",
+                            ["Cash (રોકડ)", "Online (UPI / QR)", "Bank Transfer"],
+                            key=f"p_type_{idx}"
+                        )
+
+                    calculated_amt = sum(MEAL_RATES[m] for m in selected_meals)
+
+                    with p_col2:
+                        final_amount = st.number_input(
+                            "જમણવારની રકમ (₹) *",
+                            value=float(calculated_amt),
+                            step=50.0,
+                            format="%.2f",
+                            key=f"f_amt_{idx}"
+                        )
+                        if payment_type in ["Online (UPI / QR)", "Bank Transfer"]:
+                            utr_number = st.text_input(
+                                "UTR / Ref No (ઓપ્શનલ)",
+                                placeholder="12 અંકનો ટ્રાન્ઝેક્શન ID",
+                                key=f"utr_{idx}"
+                            )
+                            if not utr_number:
+                                utr_number = "Not Provided"
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                save_btn = st.button("💾 બુકિંગ સેવ કરો", type="primary", key=f"save_b_{idx}")
+
+                if save_btn:
+                    if not raw_donor_name or not donor_phone:
+                        st.error("❌ કૃપા કરીને દાતાશ્રીનું નામ અને મોબાઈલ નંબર દાખલ કરો.")
+                    else:
+                        meals_str = ", ".join(selected_meals)
+
+                        cursor.execute(
+                            """
+                            INSERT INTO bookings (donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type, utr_number)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                            (
+                                donor_name,
+                                donor_phone,
+                                service_for_name,
+                                date_str,
+                                meals_str,
+                                meal_prep_type,
+                                final_amount,
+                                payment_status,
+                                payment_type,
+                                utr_number,
+                            ),
+                        )
+                        conn.commit()
+                        last_id = cursor.lastrowid
+                        st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વક સેવ થઈ ગયું છે!")
+
+                        st.session_state["selected_meals_list"] = []
+
+                        booking_dict = {
+                            "id": last_id,
+                            "donor_name": donor_name,
+                            "phone": donor_phone,
+                            "service_for_name": service_for_name,
+                            "booking_date": date_str,
+                            "meal_types": meals_str,
+                            "meal_prep_type": meal_prep_type,
+                            "amount": final_amount,
+                            "payment_status": payment_status,
+                            "payment_type": payment_type,
+                        }
+
+                        saved_path = auto_save_image_to_folder(booking_dict)
+                        if saved_path:
+                            st.toast(f"💾 Image Auto-saved: {saved_path}", icon="✅")
+
+                        st.write("### 📄 જમણવાર પાવતી (Receipt)")
+                        render_html_receipt(booking_dict)
+
+                        msg = (
+                            f"નમસ્તે NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST,%0A%0A"
+                            f"મેં જમણવાર બુક કર્યો છે:%0A"
+                            f"👤 દાતાશ્રી: {donor_name}%0A"
+                            f"🙏 સેવા નામ: {service_for_name}%0A"
+                            f"📅 તારીખ: {fmt_date(date_str)}%0A"
+                            f"🍲 જમણવાર: {meals_str}%0A"
+                            f"🥣 પ્રકાર: {meal_prep_type}%0A"
+                            f"💰 રકમ: ₹{final_amount}%0A"
+                            f"💳 પેમેન્ટ સ્ટેટસ: {payment_status}"
+                        )
+
+                        wa_url = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={msg}"
+                        st.markdown(
+                            f"""
+                            <a href="{wa_url}" target="_blank">
+                                <button style="background-color: #25D366; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px;">
+                                    📲 WhatsApp પર કન્ફર્મેશન મોકલો
+                                </button>
+                            </a>
+                        """,
+                            unsafe_allow_html=True,
+                        )
+            else:
+                st.info("💡 કૃપા કરીને ઉપરના કાર્ડ્સમાંથી કોઈપણ જમણવાર પસંદ કરો.")
+
+        # ==========================================
+        # ૨. સામાન્ય દાન (Donation)
+        # ==========================================
+        elif choice == "🎁 સામાન્ય દાન (Donation)":
+            st.subheader("🎁 સામાન્ય દાન સ્વીકાર ફોર્મ")
+            prefix_options = ["શ્રી", "સ્વ.", "ગં.સ્વ.", "શ્રીમતી", "કુ."]
+
+            with st.form("donation_form", clear_on_submit=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    c_dp, c_dn = st.columns([1, 2.5])
+                    with c_dp:
+                        don_prefix = st.selectbox("પ્રીફિક્સ", prefix_options)
+                    with c_dn:
+                        raw_d_name = st.text_input("દાતાનું પૂરૂં નામ *")
+                    d_name = f"{don_prefix} {raw_d_name.upper()}".strip() if raw_d_name else ""
+                    d_phone = st.text_input("મોબાઈલ નંબર", max_chars=10)
+                    d_type = st.selectbox(
+                        "દાનનો પ્રકાર", ["સામાન્ય દાન (General)", "વિકલાંગ સેવા દાન", "અનાજ દાન", "અન્ય"]
+                    )
+                with col2:
+                    d_amount = st.number_input("દાનની રકમ (₹) *", min_value=1.0)
+                    d_mode = st.selectbox("પેમેન્ટ મોડ", ["Cash (રોકડ)", "Online (UPI / QR)", "Bank Transfer"])
+                    d_utr = st.text_input("UTR / Receipt No (ઓપ્શનલ)", placeholder="ઓપ્શનલ Ref ID")
+
+                submit_d = st.form_submit_button("💾 દાન સેવ કરો")
+
+                if submit_d:
+                    if not raw_d_name or d_amount <= 0:
+                        st.error("❌ કૃપા કરીને દાતાનું નામ અને યોગ્ય રકમ નાખો.")
+                    else:
+                        cursor.execute(
+                            """
+                            INSERT INTO donations (donor_name, phone, donation_type, amount, payment_mode, utr_number)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                            (d_name, d_phone, d_type, d_amount, d_mode, d_utr if d_utr else "N/A"),
+                        )
+                        conn.commit()
+                        st.success(f"✅ {d_name} નું ₹{d_amount} નું દાન નોંધાઈ ગયું છે. ધન્યવાદ!")
+
+        # ==========================================
+        # ૩. ખર્ચ મેનેજમેન્ટ (Expenses)
+        # ==========================================
+        elif choice == "💸 ખર્ચની નોંધ (Expenses)":
+            st.subheader("💸 NGO રોજિંદો ખર્ચ")
+
+            with st.form("expense_form", clear_on_submit=True):
+                e_date = st.date_input("ખર્ચની તારીખ")
+                e_cat = st.selectbox(
+                    "ખર્ચનો પ્રકાર",
+                    ["અનાજ / કરિયાણું / શાકભાજી", "વિકલાંગ સેવા સાધનો / મદદ", "રસોઈયા / સ્ટાફ પગાર", "ગેસ સિલિન્ડર / લાઈટ બિલ", "ટ્રાન્સપોર્ટ / ભાડું", "અન્ય પરચુરણ ખર્ચ"],
+                )
+                e_desc = st.text_input("ખર્ચની વિગત / કોને ચૂકવ્યા?")
+                e_amount = st.number_input("રકમ (₹) *", min_value=1.0)
+
+                submit_e = st.form_submit_button("💾 ખર્ચ સેવ કરો")
+
+                if submit_e:
+                    if not e_desc or e_amount <= 0:
+                        st.error("❌ વિગત અને રકમ સાચી દાખલ કરો.")
+                    else:
+                        cursor.execute(
+                            """
+                            INSERT INTO expenses (expense_date, category, description, amount)
+                            VALUES (?, ?, ?, ?)
+                        """,
+                            (str(e_date), e_cat, e_desc.upper(), e_amount),
+                        )
+                        conn.commit()
+                        st.success("✅ ખર્ચ સફળતાપૂર્વક નોંધાઈ ગયો.")
+
+        # ==========================================
+        # ૪. સ્ટોક મેનેજમેન્ટ (Stock In / Out)
+        # ==========================================
+        elif choice == "📦 અનાજ & સ્ટોક (Inventory)":
+            st.subheader("📦 અનાજ અને વસ્તુઓનો સ્ટોક (Stock In/Out)")
+            tab1, tab2 = st.tabs(["➕ નવી સ્ટોક એન્ટ્રી", "📊 લાઈવ સ્ટોક સ્ટેટસ"])
+
+            with tab1:
+                with st.form("stock_form", clear_on_submit=True):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        item_name = st.text_input("વસ્તુનું નામ *", placeholder="દા.ત. ઘઉં, ચોખા, સીંગતેલ")
+                        t_type = st.radio("પ્રકાર *", ["IN (આવક - દાન/ખરીદી)", "OUT (જાવક - રસોડામાં વપરાશ)"])
+                        qty = st.number_input("જથ્થો *", min_value=0.1)
+                    with col2:
+                        unit = st.selectbox("એકમ (Unit)", ["કિલો (Kg)", "કટ્ટા/ગુણ", "ડબ્બા", "લિટર", "નંગ"])
+                        i_date = st.date_input("એન્ટ્રી તારીખ")
+                        remarks = st.text_input("નોંધ (ઓપ્શનલ)")
+
+                    submit_s = st.form_submit_button("💾 સ્ટોક સેવ કરો")
+
+                    if submit_s:
+                        if not item_name or qty <= 0:
+                            st.error("❌ કૃપા કરીને વસ્તુનું નામ અને સાચો જથ્થો લખો.")
+                        else:
+                            trans_code = "IN" if "IN" in t_type else "OUT"
+                            cursor.execute(
+                                """
+                                INSERT INTO inventory (item_name, trans_type, quantity, unit, entry_date, remarks)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """,
+                                (item_name.strip().upper(), trans_code, qty, unit, str(i_date), remarks.upper()),
+                            )
+                            conn.commit()
+                            st.success("✅ સ્ટોક એન્ટ્રી સફળતાપૂર્વક થઈ ગઈ!")
+
+            with tab2:
+                st.write("### 📈 વર્તમાન સ્ટોક સ્ટેટસ")
+                df_inv = pd.read_sql_query("SELECT * FROM inventory", conn)
+                if not df_inv.empty:
+                    summary = []
+                    for item in df_inv["item_name"].unique():
+                        item_data = df_inv[df_inv["item_name"] == item]
+                        total_in = item_data[item_data["trans_type"] == "IN"]["quantity"].sum()
+                        total_out = item_data[item_data["trans_type"] == "OUT"]["quantity"].sum()
+                        balance = total_in - total_out
+                        unit_name = item_data["unit"].iloc[-1]
+                        summary.append({"વસ્તુનું નામ": item, "કુલ આવક (IN)": total_in, "કુલ જાવક (OUT)": total_out, "હાલનો સ્ટોક (Balance)": balance, "એકમ": unit_name})
+                    st.dataframe(pd.DataFrame(summary), use_container_width=True)
+                else:
+                    st.info("હજુ સુધી કોઈ સ્ટોક એન્ટ્રી કરવામાં આવી નથી.")
+
+        # ==========================================
+        # ૫. 📜 લેટર ટાઇપિંગ અને જાવક મોડ્યુલ
+        # ==========================================
+        elif choice == "📜 લેટર ટાઇપિંગ અને જાવક":
+            st.subheader("📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
+            
+            tab_L1, tab_L2 = st.tabs(["✍️ નવો પત્ર બનાવો", "📂 જૂના પત્રોનું લિસ્ટ (Index) & એડિટ"])
+
+            with tab_L1:
+                with st.form("letter_form", clear_on_submit=True):
+                    col_l1, col_l2, col_l3 = st.columns(3)
+                    with col_l1:
+                        outward_no = st.text_input("જાવક નંબર (Outward No.) *", placeholder="દા.ત. 101/2026")
+                    with col_l2:
+                        ref_no = st.text_input("સંદર્ભ નંબર (Ref No.)", placeholder="દા.ત. REF-55")
+                    with col_l3:
+                        letter_date = st.date_input("પત્રની તારીખ")
+
+                    recipient = st.text_area("પ્રતિ (Recipient Address) *", placeholder="શ્રીમાન અધિકારીશ્રી,\nગ્રામ પંચાયત કાર્યાલય,...")
+                    subject = st.text_input("વિષય (Subject) *", placeholder="દિવ્યાંગ સહાય અર્થે બાબત...")
+                    body_text = st.text_area("પત્રનું મુખ્ય લખાણ (Body Text) *", height=200, placeholder="સવિનય સાથ જણાવવાનું કે...")
+
+                    submit_letter = st.form_submit_button("💾 પત્ર સેવ કરો અને જુઓ")
+
+                    if submit_letter:
+                        if not outward_no or not recipient or not subject or not body_text:
+                            st.error("❌ કૃપા કરીને જાવક નંબર, પ્રતિ, વિષય અને પત્રનું લખાણ અવશ્ય ભરો.")
+                        else:
+                            cursor.execute(
+                                """
+                                INSERT INTO letters (outward_no, ref_no, letter_date, recipient, subject, body_text)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """,
+                                (outward_no.upper(), ref_no.upper(), str(letter_date), recipient, subject, body_text),
+                            )
+                            conn.commit()
+                            last_letter_id = cursor.lastrowid
+                            st.success("🎉 પત્ર સફળતાપૂર્વક સેવ થઈ ગયો છે!")
+
+                            letter_dict = {
+                                "id": last_letter_id,
+                                "outward_no": outward_no.upper(),
+                                "ref_no": ref_no.upper(),
+                                "letter_date": str(letter_date),
+                                "recipient": recipient,
+                                "subject": subject,
+                                "body_text": body_text,
+                            }
+
+                            st.markdown("---")
+                            st.write("### 📄 પત્ર પ્રિવ્યુ (Letter Preview)")
+                            render_html_letter(letter_dict)
+
+                            w_msg = f"નમસ્તે, જાવક નં: {outward_no.upper()} | વિષય: {subject}"
+                            wa_letter_url = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={urllib.parse.quote(w_msg)}"
+                            st.markdown(
+                                f"""
+                                <a href="{wa_letter_url}" target="_blank">
+                                    <button style="background-color: #25D366; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px;">
+                                        📲 WhatsApp પર પત્રની વિગત મોકલો
+                                    </button>
+                                </a>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+
+            with tab_L2:
+                st.write("### 📂 સેવ થયેલા તમામ પત્રોનું ઇન્ડેક્સ (Index)")
+                cursor.execute("SELECT id, outward_no, ref_no, letter_date, recipient, subject FROM letters ORDER BY id DESC")
+                all_letters = cursor.fetchall()
+
+                if all_letters:
+                    letter_options = {f"જાવક નં: {l[1]} | તારીખ: {fmt_date(l[3])} | વિષય: {l[5]}": l[0] for l in all_letters}
+                    
+                    selected_l_label = st.selectbox(
+                        "પ્રિન્ટ અથવા એડિટ કરવા માટે પત્ર પસંદ કરો:", 
+                        list(letter_options.keys()), 
+                        key="letter_index_selectbox"
+                    )
+                    sel_l_id = letter_options[selected_l_label]
+
+                    if sel_l_id:
+                        cursor.execute("SELECT id, outward_no, ref_no, letter_date, recipient, subject, body_text FROM letters WHERE id = ?", (sel_l_id,))
+                        l_rec = cursor.fetchone()
+                        if l_rec:
+                            l_dict = {
+                                "id": l_rec[0],
+                                "outward_no": l_rec[1],
+                                "ref_no": l_rec[2],
+                                "letter_date": l_rec[3],
+                                "recipient": l_rec[4],
+                                "subject": l_rec[5],
+                                "body_text": l_rec[6],
+                            }
+                            
+                            action_mode = st.radio(
+                                "ક્રિયા પસંદ કરો:", 
+                                ["📄 પત્ર જુઓ / પ્રિન્ટ કરો", "✏️ પત્ર એડિટ કરો"], 
+                                horizontal=True, 
+                                key=f"action_mode_{sel_l_id}"
+                            )
+                            
+                            if action_mode == "📄 પત્ર જુઓ / પ્રિન્ટ કરો":
+                                render_html_letter(l_dict)
+                            else:
+                                st.write("#### ✍️ પત્ર સુધારો (Edit Letter)")
+                                with st.form(f"edit_letter_form_{sel_l_id}"):
+                                    e_outward = st.text_input("જાવક નંબર *", value=l_dict["outward_no"], key=f"e_out_{sel_l_id}")
+                                    e_ref = st.text_input("સંદર્ભ નંબર", value=l_dict["ref_no"], key=f"e_ref_{sel_l_id}")
+                                    
+                                    try:
+                                        parsed_date = datetime.strptime(l_dict["letter_date"], "%Y-%m-%d").date()
+                                    except:
+                                        parsed_date = date.today()
+                                    e_date = st.date_input("પત્રની તારીખ", value=parsed_date, key=f"e_date_{sel_l_id}")
+                                    
+                                    e_recipient = st.text_area("પ્રતિ *", value=l_dict["recipient"], key=f"e_rec_{sel_l_id}")
+                                    e_subject = st.text_input("વિષય *", value=l_dict["subject"], key=f"e_sub_{sel_l_id}")
+                                    e_body = st.text_area("પત્રનું મુખ્ય લખાણ *", value=l_dict["body_text"], height=200, key=f"e_body_{sel_l_id}")
+
+                                    update_submit = st.form_submit_button("💾 ફેરફારો સેવ કરો (Update)")
+                                    if update_submit:
+                                        if not e_outward or not e_recipient or not e_subject or not e_body:
+                                            st.error("❌ કૃપા કરીને તમામ જરૂરી ખાના ભરો.")
+                                        else:
+                                            cursor.execute("""
+                                                UPDATE letters 
+                                                SET outward_no = ?, ref_no = ?, letter_date = ?, recipient = ?, subject = ?, body_text = ?
+                                                WHERE id = ?
+                                            """, (e_outward.upper(), e_ref.upper(), str(e_date), e_recipient, e_subject, e_body, sel_l_id))
+                                            conn.commit()
+                                            st.success("✅ પત્ર સફળતાપૂર્વક અપડેટ થઈ ગયો છે!")
+                else:
+                    st.info("હજુ સુધી કોઈ પત્ર સેવ કરવામાં આવ્યો નથી.")
+
+        # ==========================================
+        # ૬. એડમિન & ઓપરેટર ડેશબોર્ડ
+        # ==========================================
+        elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ":
+            st.subheader("🔒 માસ્ટર એડમિન પેનલ")
+
+            c_jmn = cursor.execute("SELECT SUM(amount) FROM bookings").fetchone()[0] or 0.0
+            c_don = cursor.execute("SELECT SUM(amount) FROM donations").fetchone()[0] or 0.0
+            tot_inc = c_jmn + c_don
+            tot_exp = cursor.execute("SELECT SUM(amount) FROM expenses").fetchone()[0] or 0.0
+            net_bal = tot_inc - tot_exp
+
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("🍲 જમણવાર આવક", f"₹ {c_jmn:,.2f}")
+            m2.metric("🎁 સામાન્ય દાન", f"₹ {c_don:,.2f}")
+            m3.metric("📤 કુલ ખર્ચ", f"₹ {tot_exp:,.2f}")
+            m4.metric("💵 હાથ પર બાકી (Net)", f"₹ {net_bal:,.2f}")
+
+            st.markdown("---")
+
+            st.write("### 📅 જમણવારની યાદી (Check & Inform Donors)")
+
+            col_d1, col_d2 = st.columns([2, 1])
+            with col_d1:
+                selected_view_date = st.date_input("**ચોક્કસ તારીખ પસંદ કરો અને જમણવાર જુઓ:**", value=date.today(), key="view_d_input")
+            with col_d2:
+                st.write("")
+                st.write("")  
+                if st.button("🔄 યાદી જુઓ", type="primary", key="view_d_btn"):
+                    st.session_state["view_date_selected"] = True
+
+            view_date_str = str(selected_view_date)
+
+            cursor.execute("""
+                SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
+                FROM bookings WHERE booking_date = ?
+            """, (view_date_str,))
+            selected_date_bookings = cursor.fetchall()
+
+            if selected_date_bookings:
+                st.info(f"📌 **{fmt_date(view_date_str)}** ના કુલ {len(selected_date_bookings)} જમણવાર બુક થયેલ છે.")
+                
+                df_view = pd.DataFrame(selected_date_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
+                st.dataframe(df_view, use_container_width=True)
+
+                date_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**{fmt_date(view_date_str)}** ના જમણવારની યાદી:%0A"
+                for b in selected_date_bookings:
+                    date_msg += f"👤 {b[1]} (મોબાઈલ: {b[2]}) | {b[4]} | રકમ: ₹{b[6]:,.2f}%0A"
+                
+                wa_link = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={date_msg}"
                 st.markdown(
                     f"""
-                    <a href="{wa_url}" target="_blank">
-                        <button style="background-color: #25D366; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px;">
-                            📲 WhatsApp પર કન્ફર્મેશન મોકલો
+                    <a href="{wa_link}" target="_blank">
+                        <button style="background-color: #25D366; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px;">
+                            📲 આ તારીખના બધા દાતાઓને WhatsApp મોકલો
                         </button>
                     </a>
-                """,
+                    """,
                     unsafe_allow_html=True,
                 )
-    else:
-        st.info("💡 કૃપા કરીને ઉપરના કાર્ડ્સમાંથી કોઈપણ જમણવાર પસંદ કરો.")
-
-# ==========================================
-# ૨. સામાન્ય દાન (Donation)
-# ==========================================
-elif choice == "🎁 સામાન્ય દાન (Donation)":
-    st.subheader("🎁 સામાન્ય દાન સ્વીકાર ફોર્મ")
-    prefix_options = ["શ્રી", "સ્વ.", "ગં.સ્વ.", "શ્રીમતી", "કુ."]
-
-    with st.form("donation_form", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            c_dp, c_dn = st.columns([1, 2.5])
-            with c_dp:
-                don_prefix = st.selectbox("પ્રીફિક્સ", prefix_options)
-            with c_dn:
-                raw_d_name = st.text_input("દાતાનું પૂરૂં નામ *")
-            d_name = f"{don_prefix} {raw_d_name.upper()}".strip() if raw_d_name else ""
-            d_phone = st.text_input("મોબાઈલ નંબર", max_chars=10)
-            d_type = st.selectbox(
-                "દાનનો પ્રકાર", ["સામાન્ય દાન (General)", "વિકલાંગ સેવા દાન", "અનાજ દાન", "અન્ય"]
-            )
-        with col2:
-            d_amount = st.number_input("દાનની રકમ (₹) *", min_value=1.0)
-            d_mode = st.selectbox("પેમેન્ટ મોડ", ["Cash (રોકડ)", "Online (UPI / QR)", "Bank Transfer"])
-            d_utr = st.text_input("UTR / Receipt No (ઓપ્શનલ)", placeholder="ઓપ્શનલ Ref ID")
-
-        submit_d = st.form_submit_button("💾 દાન સેવ કરો")
-
-        if submit_d:
-            if not raw_d_name or d_amount <= 0:
-                st.error("❌ કૃપા કરીને દાતાનું નામ અને યોગ્ય રકમ નાખો.")
             else:
-                cursor.execute(
-                    """
-                    INSERT INTO donations (donor_name, phone, donation_type, amount, payment_mode, utr_number)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                    (d_name, d_phone, d_type, d_amount, d_mode, d_utr if d_utr else "N/A"),
+                st.warning(f"❌ **{fmt_date(view_date_str)}** ના રોજ કોઈ જમણવાર બુક થયેલ નથી.")
+
+            st.markdown("---")
+
+            today_str = str(date.today())
+            cursor.execute("""
+                SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
+                FROM bookings WHERE booking_date = ?
+            """, (today_str,))
+            today_bookings = cursor.fetchall()
+
+            st.write(f"### 🟢 આજનો જમણવાર ({fmt_date(today_str)})")
+            if today_bookings:
+                df_today = pd.DataFrame(today_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
+                st.dataframe(df_today, use_container_width=True)
+                
+                today_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**આજ ({fmt_date(today_str)})** ના જમણવારની યાદી:%0A"
+                for b in today_bookings:
+                    today_msg += f"👤 {b[1]} (મોબાઈલ: {b[2]}) | {b[4]} | રકમ: ₹{b[6]:,.2f}%0A"
+                
+                wa_link_today = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={today_msg}"
+                st.markdown(
+                    f"""
+                    <a href="{wa_link_today}" target="_blank">
+                        <button style="background-color: #25D366; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px;">
+                            📲 આજના બધા દાતાઓને WhatsApp મોકલો
+                        </button>
+                    </a>
+                    """,
+                    unsafe_allow_html=True,
                 )
-                conn.commit()
-                st.success(f"✅ {d_name} નું ₹{d_amount} નું દાન નોંધાઈ ગયું છે. ધન્યવાદ!")
-
-# ==========================================
-# ૩. ખર્ચ મેનેજમેન્ટ (Expenses)
-# ==========================================
-elif choice == "💸 ખર્ચની નોંધ (Expenses)":
-    st.subheader("💸 NGO રોજિંદો ખર્ચ")
-
-    with st.form("expense_form", clear_on_submit=True):
-        e_date = st.date_input("ખર્ચની તારીખ")
-        e_cat = st.selectbox(
-            "ખર્ચનો પ્રકાર",
-            ["અનાજ / કરિયાણું / શાકભાજી", "વિકલાંગ સેવા સાધનો / મદદ", "રસોઈયા / સ્ટાફ પગાર", "ગેસ સિલિન્ડર / લાઈટ બિલ", "ટ્રાન્સપોર્ટ / ભાડું", "અન્ય પરચુરણ ખર્ચ"],
-        )
-        e_desc = st.text_input("ખર્ચની વિગત / કોને ચૂકવ્યા?")
-        e_amount = st.number_input("રકમ (₹) *", min_value=1.0)
-
-        submit_e = st.form_submit_button("💾 ખર્ચ સેવ કરો")
-
-        if submit_e:
-            if not e_desc or e_amount <= 0:
-                st.error("❌ વિગત અને રકમ સાચી દાખલ કરો.")
             else:
-                cursor.execute(
-                    """
-                    INSERT INTO expenses (expense_date, category, description, amount)
-                    VALUES (?, ?, ?, ?)
-                """,
-                    (str(e_date), e_cat, e_desc.upper(), e_amount),
-                )
-                conn.commit()
-                st.success("✅ ખર્ચ સફળતાપૂર્વક નોંધાઈ ગયો.")
+                st.success("✅ આજે કોઈ જમણવાર બુક થયેલ નથી.")
 
-# ==========================================
-# ૪. સ્ટોક મેનેજમેન્ટ (Stock In / Out)
-# ==========================================
-elif choice == "📦 અનાજ & સ્ટોક (Inventory)":
-    st.subheader("📦 અનાજ અને વસ્તુઓનો સ્ટોક (Stock In/Out)")
-    tab1, tab2 = st.tabs(["➕ નવી સ્ટોક એન્ટ્રી", "📊 લાઈવ સ્ટોક સ્ટેટસ"])
+            st.markdown("---")
 
-    with tab1:
-        with st.form("stock_form", clear_on_submit=True):
-            col1, col2 = st.columns(2)
-            with col1:
-                item_name = st.text_input("વસ્તુનું નામ *", placeholder="દા.ત. ઘઉં, ચોખા, સીંગતેલ")
-                t_type = st.radio("પ્રકાર *", ["IN (આવક - દાન/ખરીદી)", "OUT (જાવક - રસોડામાં વપરાશ)"])
-                qty = st.number_input("જથ્થો *", min_value=0.1)
-            with col2:
-                unit = st.selectbox("એકમ (Unit)", ["કિલો (Kg)", "કટ્ટા/ગુણ", "ડબ્બા", "લિટર", "નંગ"])
-                i_date = st.date_input("એન્ટ્રી તારીખ")
-                remarks = st.text_input("નોંધ (ઓપ્શનલ)")
-
-            submit_s = st.form_submit_button("💾 સ્ટોક સેવ કરો")
-
-            if submit_s:
-                if not item_name or qty <= 0:
-                    st.error("❌ કૃપા કરીને વસ્તુનું નામ અને સાચો જથ્થો લખો.")
-                else:
-                    trans_code = "IN" if "IN" in t_type else "OUT"
-                    cursor.execute(
-                        """
-                        INSERT INTO inventory (item_name, trans_type, quantity, unit, entry_date, remarks)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                        (item_name.strip().upper(), trans_code, qty, unit, str(i_date), remarks.upper()),
-                    )
-                    conn.commit()
-                    st.success("✅ સ્ટોક એન્ટ્રી સફળતાપૂર્વક થઈ ગઈ!")
-
-    with tab2:
-        st.write("### 📈 વર્તમાન સ્ટોક સ્ટેટસ")
-        df_inv = pd.read_sql_query("SELECT * FROM inventory", conn)
-        if not df_inv.empty:
-            summary = []
-            for item in df_inv["item_name"].unique():
-                item_data = df_inv[df_inv["item_name"] == item]
-                total_in = item_data[item_data["trans_type"] == "IN"]["quantity"].sum()
-                total_out = item_data[item_data["trans_type"] == "OUT"]["quantity"].sum()
-                balance = total_in - total_out
-                unit_name = item_data["unit"].iloc[-1]
-                summary.append({"વસ્તુનું નામ": item, "કુલ આવક (IN)": total_in, "કુલ જાવક (OUT)": total_out, "હાલનો સ્ટોક (Balance)": balance, "એકમ": unit_name})
-            st.dataframe(pd.DataFrame(summary), use_container_width=True)
-        else:
-            st.info("હજુ સુધી કોઈ સ્ટોક એન્ટ્રી કરવામાં આવી નથી.")
-
-# ==========================================
-# ૫. 📜 લેટર ટાઇપિંગ અને જાવક મોડ્યુલ
-# ==========================================
-elif choice == "📜 લેટર ટાઇપિંગ અને જાવક":
-    st.subheader("📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
-    
-    tab_L1, tab_L2 = st.tabs(["✍️ નવો પત્ર બનાવો", "📂 જૂના પત્રોનું લિસ્ટ (Index) & એડિટ"])
-
-    with tab_L1:
-        with st.form("letter_form", clear_on_submit=True):
-            col_l1, col_l2, col_l3 = st.columns(3)
-            with col_l1:
-                outward_no = st.text_input("જાવક નંબર (Outward No.) *", placeholder="દા.ત. 101/2026")
-            with col_l2:
-                ref_no = st.text_input("સંદર્ભ નંબર (Ref No.)", placeholder="દા.ત. REF-55")
-            with col_l3:
-                letter_date = st.date_input("પત્રની તારીખ")
-
-            recipient = st.text_area("પ્રતિ (Recipient Address) *", placeholder="શ્રીમાન અધિકારીશ્રી,\nગ્રામ પંચાયત કાર્યાલય,...")
-            subject = st.text_input("વિષય (Subject) *", placeholder="દિવ્યાંગ સહાય અર્થે બાબત...")
-            body_text = st.text_area("પત્રનું મુખ્ય લખાણ (Body Text) *", height=200, placeholder="સવિનય સાથ જણાવવાનું કે...")
-
-            submit_letter = st.form_submit_button("💾 પત્ર સેવ કરો અને જુઓ")
-
-            if submit_letter:
-                if not outward_no or not recipient or not subject or not body_text:
-                    st.error("❌ કૃપા કરીને જાવક નંબર, પ્રતિ, વિષય અને પત્રનું લખાણ અવશ્ય ભરો.")
-                else:
-                    cursor.execute(
-                        """
-                        INSERT INTO letters (outward_no, ref_no, letter_date, recipient, subject, body_text)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                        (outward_no.upper(), ref_no.upper(), str(letter_date), recipient, subject, body_text),
-                    )
-                    conn.commit()
-                    last_letter_id = cursor.lastrowid
-                    st.success("🎉 પત્ર સફળતાપૂર્વક સેવ થઈ ગયો છે!")
-
-                    letter_dict = {
-                        "id": last_letter_id,
-                        "outward_no": outward_no.upper(),
-                        "ref_no": ref_no.upper(),
-                        "letter_date": str(letter_date),
-                        "recipient": recipient,
-                        "subject": subject,
-                        "body_text": body_text,
-                    }
-
-                    st.markdown("---")
-                    st.write("### 📄 પત્ર પ્રિવ્યુ (Letter Preview)")
-                    render_html_letter(letter_dict)
-
-                    w_msg = f"નમસ્તે, જાવક નં: {outward_no.upper()} | વિષય: {subject}"
-                    wa_letter_url = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={urllib.parse.quote(w_msg)}"
-                    st.markdown(
-                        f"""
-                        <a href="{wa_letter_url}" target="_blank">
-                            <button style="background-color: #25D366; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px;">
-                                📲 WhatsApp પર પત્રની વિગત મોકલો
-                            </button>
-                        </a>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-    with tab_L2:
-        st.write("### 📂 સેવ થયેલા તમામ પત્રોનું ઇન્ડેક્સ (Index)")
-        cursor.execute("SELECT id, outward_no, ref_no, letter_date, recipient, subject FROM letters ORDER BY id DESC")
-        all_letters = cursor.fetchall()
-
-        if all_letters:
-            letter_options = {f"જાવક નં: {l[1]} | તારીખ: {fmt_date(l[3])} | વિષય: {l[5]}": l[0] for l in all_letters}
+            st.write("### 🔵 આગામી ૩ દિવસના જમણવાર")
+            next_dates = [(date.today() + timedelta(days=i+1)).strftime('%Y-%m-%d') for i in range(3)]
             
-            selected_l_label = st.selectbox(
-                "પ્રિન્ટ અથવા એડિટ કરવા માટે પત્ર પસંદ કરો:", 
-                list(letter_options.keys()), 
-                key="letter_index_selectbox"
-            )
-            sel_l_id = letter_options[selected_l_label]
+            for nd in next_dates:
+                cursor.execute("""
+                    SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
+                    FROM bookings WHERE booking_date = ?
+                """, (nd,))
+                nd_bookings = cursor.fetchall()
+                
+                st.write(f"**📅 {fmt_date(nd)}**")
+                if nd_bookings:
+                    df_nd = pd.DataFrame(nd_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
+                    st.dataframe(df_nd, use_container_width=True)
+                else:
+                    st.caption(f"👉 {fmt_date(nd)} ના રોજ કોઈ બુકિંગ નથી.")
+                
+            st.markdown("---")
 
-            if sel_l_id:
-                cursor.execute("SELECT id, outward_no, ref_no, letter_date, recipient, subject, body_text FROM letters WHERE id = ?", (sel_l_id,))
-                l_rec = cursor.fetchone()
-                if l_rec:
-                    l_dict = {
-                        "id": l_rec[0],
-                        "outward_no": l_rec[1],
-                        "ref_no": l_rec[2],
-                        "letter_date": l_rec[3],
-                        "recipient": l_rec[4],
-                        "subject": l_rec[5],
-                        "body_text": l_rec[6],
-                    }
-                    
-                    action_mode = st.radio(
-                        "ક્રિયા પસંદ કરો:", 
-                        ["📄 પત્ર જુઓ / પ્રિન્ટ કરો", "✏️ પત્ર એડિટ કરો"], 
-                        horizontal=True, 
-                        key=f"action_mode_{sel_l_id}"
+            st.write("### 📄 જૂની પાવતી / રસીદ જોઈને પ્રિન્ટ કરો")
+            cursor.execute("SELECT id, donor_name, booking_date FROM bookings ORDER BY id DESC")
+            all_bookings = cursor.fetchall()
+
+            if all_bookings:
+                booking_options = {f"રસીદ નં #{b[0]} - {b[1]} (તારીખ: {fmt_date(b[2])})": b[0] for b in all_bookings}
+                selected_receipt_label = st.selectbox("પ્રિન્ટ કરવા માટે જૂની રસીદ પસંદ કરો:", list(booking_options.keys()), key="old_rec_sel")
+                selected_id = booking_options[selected_receipt_label]
+
+                if selected_id:
+                    cursor.execute(
+                        "SELECT id, donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type FROM bookings WHERE id = ?",
+                        (selected_id,),
                     )
-                    
-                    if action_mode == "📄 પત્ર જુઓ / પ્રિન્ટ કરો":
-                        render_html_letter(l_dict)
-                    else:
-                        st.write("#### ✍️ પત્ર સુધારો (Edit Letter)")
-                        with st.form(f"edit_letter_form_{sel_l_id}"):
-                            e_outward = st.text_input("જાવક નંબર *", value=l_dict["outward_no"])
-                            e_ref = st.text_input("સંદર્ભ નંબર", value=l_dict["ref_no"])
-                            
-                            try:
-                                parsed_date = datetime.strptime(l_dict["letter_date"], "%Y-%m-%d").date()
-                            except:
-                                parsed_date = date.today()
-                            e_date = st.date_input("પત્રની તારીખ", value=parsed_date)
-                            
-                            e_recipient = st.text_area("પ્રતિ *", value=l_dict["recipient"])
-                            e_subject = st.text_input("વિષય *", value=l_dict["subject"])
-                            e_body = st.text_area("પત્રનું મુખ્ય લખાણ *", value=l_dict["body_text"], height=200)
+                    rec = cursor.fetchone()
+                    if rec:
+                        receipt_dict = {
+                            "id": rec[0],
+                            "donor_name": rec[1],
+                            "phone": rec[2],
+                            "service_for_name": rec[3],
+                            "booking_date": rec[4],
+                            "meal_types": rec[5],
+                            "meal_prep_type": rec[6],
+                            "amount": rec[7],
+                            "payment_status": rec[8],
+                            "payment_type": rec[9],
+                        }
+                        render_html_receipt(receipt_dict)
+            else:
+                st.info("હજુ સુધી કોઈ બુકિંગ નોંધાયેલ નથી.")
 
-                            update_submit = st.form_submit_button("💾 ફેરફારો સેવ કરો (Update)")
-                            if update_submit:
-                                if not e_outward or not e_recipient or not e_subject or not e_body:
-                                    st.error("❌ કૃપા કરીને તમામ જરૂરી ખાના ભરો.")
-                                else:
-                                    cursor.execute("""
-                                        UPDATE letters 
-                                        SET outward_no = ?, ref_no = ?, letter_date = ?, recipient = ?, subject = ?, body_text = ?
-                                        WHERE id = ?
-                                    """, (e_outward.upper(), e_ref.upper(), str(e_date), e_recipient, e_subject, e_body, sel_l_id))
-                                    conn.commit()
-                                    st.success("✅ પત્ર સફળતાપૂર્વક અપડેટ થઈ ગયો છે!")
-        else:
-            st.info("હજુ સુધી કોઈ પત્ર સેવ કરવામાં આવ્યો નથી.")
-
-# ==========================================
-# ૬. એડમિન & ઓપરેટર ડેશબોર્ડ
-# ==========================================
-elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ":
-    st.subheader("🔒 માસ્ટર એડમિન પેનલ")
-
-    c_jmn = cursor.execute("SELECT SUM(amount) FROM bookings").fetchone()[0] or 0.0
-    c_don = cursor.execute("SELECT SUM(amount) FROM donations").fetchone()[0] or 0.0
-    tot_inc = c_jmn + c_don
-    tot_exp = cursor.execute("SELECT SUM(amount) FROM expenses").fetchone()[0] or 0.0
-    net_bal = tot_inc - tot_exp
-
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("🍲 જમણવાર આવક", f"₹ {c_jmn:,.2f}")
-    m2.metric("🎁 સામાન્ય દાન", f"₹ {c_don:,.2f}")
-    m3.metric("📤 કુલ ખર્ચ", f"₹ {tot_exp:,.2f}")
-    m4.metric("💵 હાથ પર બાકી (Net)", f"₹ {net_bal:,.2f}")
-
-    st.markdown("---")
-
-    st.write("### 📅 જમણવારની યાદી (Check & Inform Donors)")
-
-    col_d1, col_d2 = st.columns([2, 1])
-    with col_d1:
-        selected_view_date = st.date_input("**ચોક્કસ તારીખ પસંદ કરો અને જમણવાર જુઓ:**", value=date.today())
-    with col_d2:
-        st.write("")
-        st.write("")  
-        if st.button("🔄 યાદી જુઓ", type="primary"):
-            st.session_state["view_date_selected"] = True
-
-    view_date_str = str(selected_view_date)
-
-    cursor.execute("""
-        SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
-        FROM bookings WHERE booking_date = ?
-    """, (view_date_str,))
-    selected_date_bookings = cursor.fetchall()
-
-    if selected_date_bookings:
-        st.info(f"📌 **{fmt_date(view_date_str)}** ના કુલ {len(selected_date_bookings)} જમણવાર બુક થયેલ છે.")
-        
-        df_view = pd.DataFrame(selected_date_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
-        st.dataframe(df_view, use_container_width=True)
-
-        date_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**{fmt_date(view_date_str)}** ના જમણવારની યાદી:%0A"
-        for b in selected_date_bookings:
-            date_msg += f"👤 {b[1]} (મોબાઈલ: {b[2]}) | {b[4]} | રકમ: ₹{b[6]:,.2f}%0A"
-        
-        wa_link = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={date_msg}"
-        st.markdown(
-            f"""
-            <a href="{wa_link}" target="_blank">
-                <button style="background-color: #25D366; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px;">
-                    📲 આ તારીખના બધા દાતાઓને WhatsApp મોકલો
-                </button>
-            </a>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.warning(f"❌ **{fmt_date(view_date_str)}** ના રોજ કોઈ જમણવાર બુક થયેલ નથી.")
-
-    st.markdown("---")
-
-    today_str = str(date.today())
-    cursor.execute("""
-        SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
-        FROM bookings WHERE booking_date = ?
-    """, (today_str,))
-    today_bookings = cursor.fetchall()
-
-    st.write(f"### 🟢 આજનો જમણવાર ({fmt_date(today_str)})")
-    if today_bookings:
-        df_today = pd.DataFrame(today_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
-        st.dataframe(df_today, use_container_width=True)
-        
-        today_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**આજ ({fmt_date(today_str)})** ના જમણવારની યાદી:%0A"
-        for b in today_bookings:
-            today_msg += f"👤 {b[1]} (મોબાઈલ: {b[2]}) | {b[4]} | રકમ: ₹{b[6]:,.2f}%0A"
-        
-        wa_link_today = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={today_msg}"
-        st.markdown(
-            f"""
-            <a href="{wa_link_today}" target="_blank">
-                <button style="background-color: #25D366; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px;">
-                    📲 આજના બધા દાતાઓને WhatsApp મોકલો
-                </button>
-            </a>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.success("✅ આજે કોઈ જમણવાર બુક થયેલ નથી.")
-
-    st.markdown("---")
-
-    st.write("### 🔵 આગામી ૩ દિવસના જમણવાર")
-    next_dates = [(date.today() + timedelta(days=i+1)).strftime('%Y-%m-%d') for i in range(3)]
-    
-    for nd in next_dates:
-        cursor.execute("""
-            SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
-            FROM bookings WHERE booking_date = ?
-        """, (nd,))
-        nd_bookings = cursor.fetchall()
-        
-        st.write(f"**📅 {fmt_date(nd)}**")
-        if nd_bookings:
-            df_nd = pd.DataFrame(nd_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
-            st.dataframe(df_nd, use_container_width=True)
-        else:
-            st.caption(f"👉 {fmt_date(nd)} ના રોજ કોઈ બુકિંગ નથી.")
-        
-    st.markdown("---")
-
-    st.write("### 📄 જૂની પાવતી / રસીદ જોઈને પ્રિન્ટ કરો")
-    cursor.execute("SELECT id, donor_name, booking_date FROM bookings ORDER BY id DESC")
-    all_bookings = cursor.fetchall()
-
-    if all_bookings:
-        booking_options = {f"રસીદ નં #{b[0]} - {b[1]} (તારીખ: {fmt_date(b[2])})": b[0] for b in all_bookings}
-        selected_receipt_label = st.selectbox("પ્રિન્ટ કરવા માટે જૂની રસીદ પસંદ કરો:", list(booking_options.keys()))
-        selected_id = booking_options[selected_receipt_label]
-
-        if selected_id:
-            cursor.execute(
-                "SELECT id, donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type FROM bookings WHERE id = ?",
-                (selected_id,),
+            st.markdown("---")
+            st.write("### 📋 જમણવાર બુકિંગ લિસ્ટ (સંપૂર્ણ)")
+            df_b = pd.read_sql_query(
+                "SELECT id, donor_name AS 'દાતાશ્રી', service_for_name AS 'જેમના નામે સેવા', phone AS 'મોબાઈલ', booking_date AS 'તારીખ', meal_types AS 'જમણવાર', meal_prep_type AS 'પ્રકાર', amount AS 'રકમ (₹)', payment_status AS 'Pay Status', payment_type AS 'Pay Type' FROM bookings ORDER BY id DESC",
+                conn,
             )
-            rec = cursor.fetchone()
-            if rec:
-                receipt_dict = {
-                    "id": rec[0],
-                    "donor_name": rec[1],
-                    "phone": rec[2],
-                    "service_for_name": rec[3],
-                    "booking_date": rec[4],
-                    "meal_types": rec[5],
-                    "meal_prep_type": rec[6],
-                    "amount": rec[7],
-                    "payment_status": rec[8],
-                    "payment_type": rec[9],
-                }
-                render_html_receipt(receipt_dict)
-    else:
-        st.info("હજુ સુધી કોઈ બુકિંગ નોંધાયેલ નથી.")
+            if not df_b.empty and 'तારીખ' in df_b.columns:
+                df_b['તારીખ'] = df_b['તારીખ'].apply(fmt_date)
+            st.dataframe(df_b, use_container_width=True)
 
-    st.markdown("---")
-    st.write("### 📋 જમણવાર બુકિંગ લિસ્ટ (સંપૂર્ણ)")
-    df_b = pd.read_sql_query(
-        "SELECT id, donor_name AS 'દાતાશ્રી', service_for_name AS 'જેમના નામે સેવા', phone AS 'મોબાઈલ', booking_date AS 'તારીખ', meal_types AS 'જમણવાર', meal_prep_type AS 'પ્રકાર', amount AS 'રકમ (₹)', payment_status AS 'Pay Status', payment_type AS 'Pay Type' FROM bookings ORDER BY id DESC",
-        conn,
-    )
-    if not df_b.empty and 'તારીખ' in df_b.columns:
-        df_b['તારીખ'] = df_b['તારીખ'].apply(fmt_date)
-    st.dataframe(df_b, use_container_width=True)
+            st.markdown("---")
+            st.write("### 📥 ડેટા ડાઉનલોડ કરો")
 
-    st.markdown("---")
-    st.write("### 📥 ડેટા ડાઉનલોડ કરો")
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+                pd.read_sql_query("SELECT * FROM bookings", conn).to_excel(writer, sheet_name="Jamanvar", index=False)
+                pd.read_sql_query("SELECT * FROM donations", conn).to_excel(writer, sheet_name="Donations", index=False)
+                pd.read_sql_query("SELECT * FROM expenses", conn).to_excel(writer, sheet_name="Expenses", index=False)
+                pd.read_sql_query("SELECT * FROM inventory", conn).to_excel(writer, sheet_name="Inventory", index=False)
+                pd.read_sql_query("SELECT * FROM letters", conn).to_excel(writer, sheet_name="Letters", index=False)
 
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        pd.read_sql_query("SELECT * FROM bookings", conn).to_excel(writer, sheet_name="Jamanvar", index=False)
-        pd.read_sql_query("SELECT * FROM donations", conn).to_excel(writer, sheet_name="Donations", index=False)
-        pd.read_sql_query("SELECT * FROM expenses", conn).to_excel(writer, sheet_name="Expenses", index=False)
-        pd.read_sql_query("SELECT * FROM inventory", conn).to_excel(writer, sheet_name="Inventory", index=False)
-        pd.read_sql_query("SELECT * FROM letters", conn).to_excel(writer, sheet_name="Letters", index=False)
-
-    st.download_button(
-        label="📥 તમામ ડેટા Excel માં ડાઉનલોડ કરો",
-        data=buffer.getvalue(),
-        file_name="ngo_master_report.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+            st.download_button(
+                label="📥 તમામ ડેટા Excel માં ડાઉનલોડ કરો",
+                data=buffer.getvalue(),
+                file_name="ngo_master_report.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="excel_down_btn"
+            )
