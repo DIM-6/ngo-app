@@ -151,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS WITH PASSWORD VISIBILITY REMOVAL FIX
+# 🎨 CLEAN CSS WITH CUSTOM STYLISH MENU BUTTONS
 st.markdown(
     """
     <style>
@@ -185,7 +185,7 @@ st.markdown(
     [data-testid="stSidebar"] { display: none !important; }
     footer, #MainMenu { display: none !important; }
 
-    /* ===== CARD BUTTON STYLING FIX ===== */
+    /* ===== CARD BUTTON STYLING FIX (MEAL CARDS) ===== */
     div.stButton {
         width: 100% !important;
     }
@@ -201,6 +201,43 @@ st.markdown(
         align-items: center !important;
         padding: 10px !important;
         white-space: pre-wrap !important;
+    }
+
+    /* ===== STYLISH COMPACT MENU BUTTONS CSS ===== */
+    .ngo-menu-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin: 12px 0 20px 0;
+    }
+    .ngo-menu-btn {
+        background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+        color: #1E3A8A;
+        border: 1.5px solid #CBD5E1;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ngo-menu-btn:hover {
+        background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+        color: #0369A1;
+        border-color: #38BDF8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
+    }
+    .ngo-menu-btn.active {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        color: #FFFFFF !important;
+        border: 1.5px solid #047857;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
     }
 
     /* ===== MAIN FORM SIZING FIXED ===== */
@@ -762,7 +799,7 @@ else:
 st.markdown("---")
 
 # ==========================================
-# 🔒 TOP LOGIN & TOP NAVIGATION MENU (UPDATED)
+# 🔒 TOP LOGIN & TOP NAVIGATION MENU (AUTO-HIDE PASSWORD BOX)
 # ==========================================
 st.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
 
@@ -825,23 +862,27 @@ else:
     ]
 
 st.markdown("---")
-st.markdown("### 📌 મુખ્ય મેનૂ ")
+st.markdown("### 📌 મુખ્ય મેનૂ")
 
-if "selected_menu" not in st.session_state or st.session_state["selected_menu"] not in menu:
-    st.session_state["selected_menu"] = menu[0]
+# Handle menu selection via query parameters for stunning compact stylish buttons
+query_params = st.experimental_get_query_params()
+saved_menu = query_params.get("menu", [None])[0]
 
-# 3 Columns grid layout for buttons so it looks clean and attractive
-cols = st.columns(3)
-for idx, m_item in enumerate(menu):
-    c_idx = idx % 3
-    with cols[c_idx]:
-        is_active = (st.session_state["selected_menu"] == m_item)
-        btn_type = "primary" if is_active else "secondary"
-        if st.button(m_item, key=f"menu_card_btn_{idx}", type=btn_type, use_container_width=True):
-            st.session_state["selected_menu"] = m_item
-            st.rerun()
+if saved_menu in menu:
+    choice = saved_menu
+else:
+    choice = menu[0]
 
-choice = st.session_state["selected_menu"]
+# Render gorgeous compact gradient buttons for menu
+menu_html = '<div class="ngo-menu-container">'
+for m_item in menu:
+    is_active = (m_item == choice)
+    active_class = " active" if is_active else ""
+    encoded_item = urllib.parse.quote(m_item)
+    menu_html += f'<a href="?menu={encoded_item}" class="ngo-menu-btn{active_class}">{m_item}</a>'
+menu_html += '</div>'
+
+st.markdown(menu_html, unsafe_allow_html=True)
 st.markdown("---")
 
 # ==========================================
@@ -1007,7 +1048,7 @@ if choice == "🍲 જમણવાર બુકિંગ":
                 )
                 conn.commit()
                 last_id = cursor.lastrowid
-                st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વક સેવ થઈ ગયું છે!")
+                st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વਕ સેવ થઈ ગયું છે!")
 
                 st.session_state["selected_meals_list"] = []
 
