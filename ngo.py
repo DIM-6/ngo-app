@@ -1490,31 +1490,77 @@ for idx, m_item in enumerate(menu):
             )
 
 
-import os
-
-st.write("### 🖼️ સેવ થયેલી પાવતીઓની ઇમેજિસ")
-if os.path.exists(RECEIPTS_DIR):
-  image_files = os.listdir(RECEIPTS_DIR)
-  if image_files:
-    selected_img = st.selectbox(
-        "પ્રિન્ટ અથવા જોવા માટે ઇમેજ પસંદ કરો:", image_files
-    )
-    if selected_img:
-      img_full_path = os.path.join(RECEIPTS_DIR, selected_img)
-      st.image(img_full_path, caption=selected_img, use_container_width=True)
-
-      with open(img_full_path, "rb") as file:
-        st.download_button(
-            label="📥 આ ઇમેજ ડાઉનલોડ કરો",
-            data=file,
-            file_name=selected_img,
-            mime="image/png",
+# ==========================================
+# 🖼️ AUTO-SAVE BACKEND IMAGE FUNCTION (RECEIPT)
+# ==========================================
+def auto_save_image_to_folder(booking_info):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        
+        clean_donor_name = (
+            "".join(
+                c
+                for c in booking_info["donor_name"]
+                if c.isalnum() or c in (" ", "_", "-")
+            )
+            .strip()
+            .replace(" ", "_")
         )
-  else:
-    st.info("હજુ સુધી કોઈ ઇમેજ સેવ થઈ નથી.")
-else:
-  st.info("Receipts_Images ફોલ્ડર હજુ બન્યું નથી.")
 
+        filename = f"Receipt_No_{booking_info.get('id', 'N/A')}_{clean_donor_name}.png"
+        file_path = os.path.join(RECEIPTS_DIR, filename)
+
+        # Create a clean white image for receipt
+        img_width, img_height = 800, 1100
+        image = Image.new("RGB", (img_width, img_height), color="white")
+        draw = ImageDraw.Draw(image)
+
+        # Draw border
+        draw.rectangle([15, 15, img_width - 15, img_height - 15], outline="#1e3a8a", width=4)
+
+        # Load Gujarati Font if available in folder
+        font_path = "GujaratiFont.ttf"
+        try:
+            if os.path.exists(font_path):
+                font_large = ImageFont.truetype(font_path, 28)
+                font_med = ImageFont.truetype(font_path, 22)
+                font_small = ImageFont.truetype(font_path, 20)
+            else:
+                font_large = font_med = font_small = ImageFont.load_default()
+        except:
+            font_large = font_med = font_small = ImageFont.load_default()
+
+        draw.text((40, 40), NGO_NAME, fill="#16A34A", font=font_large)
+        draw.text((40, 85), f"Reg. No: {NGO_REG_NO}", fill="#4b5563", font=font_small)
+        
+        draw.line([40, 130, img_width - 40, 130], fill="#1e3a8a", width=2)
+
+        y = 160
+        details = [
+            ("પાવતી નં / Receipt No:", f"#{booking_info.get('id', 'N/A')}"),
+            ("તારીખ / Date:", datetime.now().strftime('%d-%m-%Y')),
+            ("દાતાશ્રી / Donor:", str(booking_info["donor_name"])),
+            ("મોબાઈલ / Mobile:", str(booking_info["phone"])),
+            ("સેવા નામ / Service:", str(booking_info["service_for_name"])),
+            ("જમણવાર તારીખ:", fmt_date(booking_info["booking_date"])),
+            ("જમણવાર / Meal:", str(booking_info["meal_types"])),
+            ("પ્રકાર / Prep Type:", str(booking_info["meal_prep_type"])),
+            ("રકમ / Amount:", f"Rs. {booking_info['amount']:,.2f}"),
+            ("પેમેન્ટ / Payment:", f"{booking_info['payment_type']} ({booking_info['payment_status']})")
+        ]
+
+        for label, val in details:
+            draw.text((50, y), label, fill="#1e3a8a", font=font_med)
+            draw.text((320, y), val, fill="#111827", font=font_small)
+            y += 55
+
+        draw.line([40, img_height - 120, img_width - 40, img_height - 120], fill="#e2e8f0", width=2)
+        draw.text((img_width / 2 - 220, img_height - 80), "Thank you for your noble support! આપનો આભાર!", fill="#059669", font=font_med)
+
+        image.save(file_path)
+        return file_path
+    except Exception as e:
+        return None
 
 
 
