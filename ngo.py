@@ -9,7 +9,7 @@ from PIL import Image
 import streamlit as st
 import streamlit.components.v1 as components
 
-from reportlab.lib.pagesizes import A6
+from reportlab.lib.pagesizes import A4, A6
 from reportlab.pdfgen import canvas
 
 # ==========================================
@@ -69,6 +69,19 @@ CREATE TABLE IF NOT EXISTS inventory (
     remarks TEXT
 )
 """)
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS letters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    outward_no TEXT,
+    ref_no TEXT,
+    letter_date TEXT,
+    recipient TEXT,
+    subject TEXT,
+    body_text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
 conn.commit()
 
 # ==========================================
@@ -94,11 +107,15 @@ if not os.path.exists(LOGO_PATH):
 
 BASE_DIR = os.getcwd()
 RECEIPTS_DIR = os.path.join(BASE_DIR, "Receipts")
+LETTERS_DIR = os.path.join(BASE_DIR, "Letters")
 try:
     os.makedirs(RECEIPTS_DIR, exist_ok=True)
+    os.makedirs(LETTERS_DIR, exist_ok=True)
 except Exception:
     RECEIPTS_DIR = "/tmp/Receipts"
+    LETTERS_DIR = "/tmp/Letters"
     os.makedirs(RECEIPTS_DIR, exist_ok=True)
+    os.makedirs(LETTERS_DIR, exist_ok=True)
 
 
 def get_image_base64(image_path):
@@ -109,6 +126,13 @@ def get_image_base64(image_path):
         except Exception:
             return ""
     return ""
+
+
+def fmt_date(d_str):
+    try:
+        return datetime.strptime(str(d_str), "%Y-%m-%d").strftime("%d-%m-%Y")
+    except Exception:
+        return str(d_str)
 
 
 MEAL_RATES = {
@@ -127,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 UPDATED CSS - WIDER CONTAINER & NO NUMBER CUTOFF
+# 🎨 CSS & JS STYLING
 st.markdown(
     """
     <style>
@@ -165,6 +189,21 @@ st.markdown(
     }
 
     footer, #MainMenu { display: none !important; }
+
+    /* ===== CARD BUTTON STYLING FOR JAMANVAR ===== */
+    div.stButton > button {
+        width: 100% !important;
+        height: 95px !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
+        font-size: 13.5px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 10px !important;
+        white-space: pre-wrap !important;
+    }
 
     /* ===== MAIN FORM SIZING FIXED ===== */
     .main .block-container {
@@ -227,11 +266,6 @@ st.markdown(
             padding-left: 0.5rem !important;
             padding-right: 0.5rem !important;
         }
-        .stButton button {
-            width: 100% !important;
-            font-size: 15px !important;
-            padding: 10px !important;
-        }
         .header-wrapper {
             flex-direction: column !important;
             gap: 10px !important;
@@ -243,13 +277,24 @@ st.markdown(
         .h-title-2, .h-title-3 { font-size: 15px !important; }
     }
     </style>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            const toggleCtrl = document.querySelector('[data-testid="collapsedControl"]');
+            if (toggleCtrl) {
+                toggleCtrl.title = "Click To see Side Panel (<< >>)";
+            }
+        }, 1000);
+    });
+    </script>
 """,
     unsafe_allow_html=True,
 )
 
 
 # ==========================================
-# 📄 AUTO-SAVE BACKEND PDF FUNCTION
+# 📄 AUTO-SAVE BACKEND PDF FUNCTION (RECEIPT)
 # ==========================================
 def auto_save_pdf_to_folder(booking_info):
     try:
@@ -307,7 +352,7 @@ def auto_save_pdf_to_folder(booking_info):
             ("Donor:", str(booking_info["donor_name"]).upper()),
             ("Phone:", str(booking_info["phone"])),
             ("Service For:", str(booking_info["service_for_name"]).upper()),
-            ("Meal Date:", str(booking_info["booking_date"])),
+            ("Meal Date:", fmt_date(booking_info["booking_date"])),
             ("Meals:", str(booking_info["meal_types"])),
             ("Prep:", str(booking_info["meal_prep_type"])),
             ("Amount:", f"Rs. {booking_info['amount']:,.2f}"),
@@ -474,7 +519,7 @@ def render_html_receipt(booking_info):
             <div class="row"><span class="label">દાતાશ્રી / Donor:</span><span class="value">{booking_info['donor_name']}</span></div>
             <div class="row"><span class="label">મોબાઈલ / Mobile:</span><span class="value">{booking_info['phone']}</span></div>
             <div class="row"><span class="label">સેવા નામ / Service For:</span><span class="value">{booking_info['service_for_name']}</span></div>
-            <div class="row"><span class="label">જમણવાર તારીખ:</span><span class="value">{booking_info['booking_date']}</span></div>
+            <div class="row"><span class="label">જમણવાર તારીખ:</span><span class="value">{fmt_date(booking_info['booking_date'])}</span></div>
             <div class="row"><span class="label">જમણવાર / Meal:</span><span class="value">{booking_info['meal_types']}</span></div>
             <div class="row"><span class="label">પ્રકાર / Prep Type:</span><span class="value">{booking_info['meal_prep_type']}</span></div>
             <div class="row total-row"><span>રકમ / Amount:</span><span>₹ {booking_info['amount']:,.2f}</span></div>
@@ -486,6 +531,186 @@ def render_html_receipt(booking_info):
     </html>
     """
     components.html(html_code, height=530, scrolling=True)
+
+
+# ==========================================
+# 📜 PRINTABLE HTML LETTER (Subject First, then Reference)
+# ==========================================
+def render_html_letter(letter_info):
+    logo_b64 = get_image_base64(LOGO_PATH)
+    logo_html = (
+        f'<img src="data:image/png;base64,{logo_b64}" style="height: 75px; width: auto;" />'
+        if logo_b64
+        else ""
+    )
+
+    pdf_file_name = f"Letter_Out_{letter_info.get('outward_no', 'N/A')}"
+
+    html_code = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{pdf_file_name}</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
+            * {{ box-sizing: border-box; }}
+            body {{
+                font-family: 'Noto Sans Gujarati', Arial, sans-serif;
+                background-color: #ffffff;
+                margin: 0;
+                padding: 10px;
+                display: flex;
+                justify-content: center;
+            }}
+            .letter-box {{
+                width: 100%;
+                max-width: 700px;
+                background: #ffffff;
+                border: 2px solid #1e3a8a;
+                border-radius: 8px;
+                padding: 25px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            }}
+            .header-flex {{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 15px;
+                border-bottom: 3px solid #F39C12;
+                padding-bottom: 12px;
+                margin-bottom: 15px;
+            }}
+            .title-box {{
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                line-height: 1.15;
+            }}
+            .title-l1 {{ color: #16A34A; font-size: 20px; font-weight: 900; }}
+            .title-l2 {{ color: #0284C7; font-size: 15px; font-weight: 800; }}
+            .title-l3 {{ color: #1E3A8A; font-size: 15px; font-weight: 800; }}
+            .reg-no {{ color: #4b5563; font-size: 11px; font-weight: bold; margin-top: 3px; }}
+            
+            .meta-row {{
+                display: flex;
+                justify-content: space-between;
+                font-weight: bold;
+                font-size: 13px;
+                margin-bottom: 15px;
+                color: #1e3a8a;
+            }}
+            .recipient-box {{
+                font-size: 13.5px;
+                font-weight: bold;
+                margin-bottom: 15px;
+                line-height: 1.4;
+            }}
+            .subject-box {{
+                font-size: 14px;
+                font-weight: bold;
+                text-decoration: underline;
+                color: #1E3A8A;
+            }}
+            .ref-box {{
+                font-size: 13px;
+                font-weight: bold;
+                color: #1e3a8a;
+                margin-top: 8px;
+                margin-bottom: 20px;
+            }}
+            .body-content {{
+                font-size: 13.5px;
+                line-height: 1.7;
+                white-space: pre-wrap;
+                margin-bottom: 30px;
+                color: #111827;
+            }}
+            .signature-box {{
+                float: right;
+                text-align: center;
+                font-weight: bold;
+                font-size: 13.5px;
+                margin-top: 20px;
+            }}
+            .print-button {{
+                display: block;
+                width: 100%;
+                background-color: #1e3a8a;
+                color: white;
+                text-align: center;
+                padding: 10px;
+                margin-top: 20px;
+                border: none;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: bold;
+                cursor: pointer;
+            }}
+            @media print {{
+                @page {{ size: A4 portrait; margin: 15mm; }}
+                .print-button {{ display: none; }}
+                body {{ background-color: #ffffff; padding: 0; margin: 0; }}
+                .letter-box {{ border: none; box-shadow: none; width: 100%; border-radius: 0; padding: 0; }}
+            }}
+        </style>
+        <script>
+            function printLetter() {{
+                try {{ window.parent.document.title = "{pdf_file_name}"; }} catch(e) {{}}
+                document.title = "{pdf_file_name}";
+                window.print();
+            }}
+        </script>
+    </head>
+    <body>
+        <div class="letter-box">
+            <div class="header-flex">
+                <div class="logo-box">{logo_html}</div>
+                <div class="title-box">
+                    <div class="title-l1">NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST</div>
+                    <div class="title-l2">નર્મદેશ્વર વિકલાંગ વિકાસ માનવ સેવા ટ્રસ્ટ</div>
+                    <div class="reg-no">Reg. No: {NGO_REG_NO}</div>
+                </div>
+            </div>
+            
+            <!-- First Line: Outward No and Date -->
+            <div class="meta-row">
+                <div>જાવક નં: {letter_info.get('outward_no', 'N/A')}</div>
+                <div>તારીખ: {fmt_date(letter_info.get('letter_date', 'N/A'))}</div>
+            </div>
+
+            <div class="recipient-box">
+                પ્રતિ,<br>
+                {letter_info.get('recipient', '').replace(chr(10), '<br>')}
+            </div>
+
+            <!-- Subject First, then Reference Number -->
+            <div>
+                <span class="subject-box">વિષય: {letter_info.get('subject', '')}</span>
+            </div>
+            <div class="ref-box">
+                સંદર્ભ નં: {letter_info.get('ref_no', 'N/A')}
+            </div>
+
+            <div class="body-content">
+{letter_info.get('body_text', '')}
+            </div>
+
+            <div class="signature-box">
+                પ્રમુખ / સેક્રેટરી<br>
+                નર્મદેશ્વર વિકલાંગ વિકાસ માનવ સેવા ટ્રસ્ટ
+            </div>
+
+            <div style="clear: both;"></div>
+
+            <button class="print-button" onclick="printLetter()">🖨️ પત્ર પ્રિન્ટ કરો / PDF સેવ કરો</button>
+        </div>
+    </body>
+    </html>
+    """
+    components.html(html_code, height=650, scrolling=True)
 
 
 # ==========================================
@@ -507,7 +732,7 @@ if logo_b64_main:
                     <span>જમણવાર બુકિંગ</span> | 
                     <span>દાન સ્વીકાર</span> | 
                     <span>ખર્ચ નોંધ</span> | 
-                    <span>અનાજ સ્ટોક મેનેજમેન્ટ</span>
+                    <span>અનાજ સ્ટોક</span>
                 </div>
             </div>
         </div>
@@ -527,7 +752,7 @@ else:
                     <span>જમણવાર બુકિંગ</span> | 
                     <span>દાન સ્વીકાર</span> | 
                     <span>ખર્ચ નોંધ</span> | 
-                    <span>અનાજ સ્ટોક મેનેજમેન્ટ</span>
+                    <span>અનાજ સ્ટોક</span>
                 </div>
             </div>
         </div>
@@ -538,11 +763,11 @@ else:
 st.markdown("---")
 
 # ==========================================
-# 🔒 LOGIN SYSTEM
+# 🔒 LOGIN SYSTEM (Show / Hide Password Label Helper)
 # ==========================================
-st.sidebar.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
+st.sidebar.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન (Show / Hide)")
 login_pwd = st.sidebar.text_input(
-    "પાસવર્ડ દાખલ કરો", type="password", key="side_login_pwd"
+    "પાસવર્ડ દાખલ કરો (Show)", type="password", key="side_login_pwd"
 )
 
 if login_pwd == "ngo123":
@@ -569,6 +794,7 @@ if st.session_state.get("is_admin", False):
         "🎁 સામાન્ય દાન (Donation)",
         "💸 ખર્ચની નોંધ (Expenses)",
         "📦 અનાજ & સ્ટોક (Inventory)",
+        "📜 લેટર ટાઇપિંગ અને જાવક",
         "📊 એડમિન & હિસાબ ડેશબોર્ડ",
     ]
 elif st.session_state.get("is_operator", False):
@@ -577,7 +803,8 @@ elif st.session_state.get("is_operator", False):
         "🎁 સામાન્ય દાન (Donation)",
         "💸 ખર્ચની નોંધ (Expenses)",
         "📦 અનાજ & સ્ટોક (Inventory)",
-        "📊 એડમિન & હિસાબ ડેશબોર્ડ",  # ✅ Operator ને પણ Dashboard બતાવવા માટે ઉમેર્યું
+        "📜 લેટર ટાઇપિંગ અને જાવક",
+        "📊 એડમિન & હિસાબ ડેશબોર્ડ",
     ]
 else:
     menu = [
@@ -585,10 +812,10 @@ else:
         "🎁 સામાન્ય દાન (Donation)",
     ]
 
-choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
+choice = st.sidebar.radio("📌 મુખ્ય મેનૂ (<< >> Click To see Side Panel)", menu)
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ
+# ૧. જમણવાર બુકિંગ મોડ્યુલ (CARD CLICK TO SELECT)
 # ==========================================
 if choice == "🍲 જમણવાર બુકિંગ":
     st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -605,7 +832,7 @@ if choice == "🍲 જમણવાર બુકિંગ":
     booked_records = cursor.fetchall()
     booked_meals = [m for row in booked_records if row[0] for m in row[0].split(", ")]
 
-    st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો (કાર્ડ પર ટચ/ક્લિક કરો) *")
+    st.write("### ૨. ઉપલબ્ધ જમણવાર પસંદ કરો (કાર્ડ પર ક્લિક કરો) *")
 
     if "selected_meals_list" not in st.session_state:
         st.session_state["selected_meals_list"] = []
@@ -632,30 +859,16 @@ if choice == "🍲 જમણવાર બુકિંગ":
                 )
             else:
                 is_selected = meal in st.session_state["selected_meals_list"]
-                card_bg = "#EFF6FF" if is_selected else "#F9FAFB"
-                border_color = "#2563EB" if is_selected else "#D1D5DB"
-                badge_color = "#1D4ED8" if is_selected else "#059669"
-                status_text = "✓ સિલેક્ટ થયેલ" if is_selected else "સિલેક્ટ કરવા ક્લિક કરો"
-
-                st.markdown(
-                    f"""
-                    <div style="background-color: {card_bg}; border: 2px solid {border_color}; border-radius: 8px; padding: 12px; margin-bottom: 8px; text-align: center; height: 95px; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin: 0; color: #1E3A8A; font-size: 14px; font-weight: bold;">{meal}</h4>
-                        <p style="margin: 2px 0; color: #047857; font-weight: 800; font-size: 13.5px;">₹{rate_display}</p>
-                        <span style="color: {badge_color}; font-size: 11px; font-weight: bold;">{status_text}</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                if is_selected:
-                    if st.button("હટાવો (Remove)", key=f"tog_{idx}", type="secondary"):
+                
+                status_label = "✓ સિલેક્ટ થયેલ (હટાવવા ક્લિક કરો)" if is_selected else "સિલેક્ટ કરવા ક્લિક કરો"
+                card_button_text = f"{meal}\n₹{rate_display}\n{status_label}"
+                
+                if st.button(card_button_text, key=f"card_btn_{idx}", type="primary" if is_selected else "secondary"):
+                    if is_selected:
                         st.session_state["selected_meals_list"].remove(meal)
-                        st.rerun()
-                else:
-                    if st.button("સિલેક્ટ કરો", key=f"tog_{idx}", type="primary"):
+                    else:
                         st.session_state["selected_meals_list"].append(meal)
-                        st.rerun()
+                    st.rerun()
 
     for meal in ALL_MEALS:
         if meal in st.session_state["selected_meals_list"] and meal not in booked_meals:
@@ -788,7 +1001,7 @@ if choice == "🍲 જમણવાર બુકિંગ":
                     f"મેં જમણવાર બુક કર્યો છે:%0A"
                     f"👤 દાતાશ્રી: {donor_name}%0A"
                     f"🙏 સેવા નામ: {service_for_name}%0A"
-                    f"📅 તારીખ: {date_str}%0A"
+                    f"📅 તારીખ: {fmt_date(date_str)}%0A"
                     f"🍲 જમણવાર: {meals_str}%0A"
                     f"🥣 પ્રકાર: {meal_prep_type}%0A"
                     f"💰 રકમ: ₹{final_amount}%0A"
@@ -934,12 +1147,146 @@ elif choice == "📦 અનાજ & સ્ટોક (Inventory)":
             st.info("હજુ સુધી કોઈ સ્ટોક એન્ટ્રી કરવામાં આવી નથી.")
 
 # ==========================================
-# ૫. એડમિન & ઓપરેટર ડેશબોર્ડ (UPDATED WITH TODAY & NEXT 3 DAYS)
+# ૫. 📜 લેટર ટાઇપિંગ અને જાવક મોડ્યુલ
+# ==========================================
+elif choice == "📜 લેટર ટાઇપિંગ અને જાવક":
+    st.subheader("📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
+    
+    tab_L1, tab_L2 = st.tabs(["✍️ નવો પત્ર બનાવો", "📂 જૂના પત્રોનું લિસ્ટ (Index) & એડિટ"])
+
+    with tab_L1:
+        with st.form("letter_form", clear_on_submit=True):
+            col_l1, col_l2, col_l3 = st.columns(3)
+            with col_l1:
+                outward_no = st.text_input("જાવક નંબર (Outward No.) *", placeholder="દા.ત. 101/2026")
+            with col_l2:
+                ref_no = st.text_input("સંદર્ભ નંબર (Ref No.)", placeholder="દા.ત. REF-55")
+            with col_l3:
+                letter_date = st.date_input("પત્રની તારીખ")
+
+            recipient = st.text_area("પ્રતિ (Recipient Address) *", placeholder="શ્રીમાન અધિકારીશ્રી,\nગ્રામ પંચાયત કાર્યાલય,...")
+            subject = st.text_input("વિષય (Subject) *", placeholder="દિવ્યાંગ સહાય અર્થે બાબત...")
+            body_text = st.text_area("પત્રનું મુખ્ય લખાણ (Body Text) *", height=200, placeholder="સવિનય સાથ જણાવવાનું કે...")
+
+            submit_letter = st.form_submit_button("💾 પત્ર સેવ કરો અને જુઓ")
+
+            if submit_letter:
+                if not outward_no or not recipient or not subject or not body_text:
+                    st.error("❌ કૃપા કરીને જાવક નંબર, પ્રતિ, વિષય અને પત્રનું લખાણ અવશ્ય ભરો.")
+                else:
+                    cursor.execute(
+                        """
+                        INSERT INTO letters (outward_no, ref_no, letter_date, recipient, subject, body_text)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                        (outward_no.upper(), ref_no.upper(), str(letter_date), recipient, subject, body_text),
+                    )
+                    conn.commit()
+                    last_letter_id = cursor.lastrowid
+                    st.success("🎉 પત્ર સફળતાપૂર્વક સેવ થઈ ગયો છે!")
+
+                    letter_dict = {
+                        "id": last_letter_id,
+                        "outward_no": outward_no.upper(),
+                        "ref_no": ref_no.upper(),
+                        "letter_date": str(letter_date),
+                        "recipient": recipient,
+                        "subject": subject,
+                        "body_text": body_text,
+                    }
+
+                    st.markdown("---")
+                    st.write("### 📄 પત્ર પ્રિવ્યુ (Letter Preview)")
+                    render_html_letter(letter_dict)
+
+                    w_msg = f"નમસ્તે, જાવક નં: {outward_no.upper()} | વિષય: {subject}"
+                    wa_letter_url = f"https://api.whatsapp.com/send?phone={NGO_PHONE}&text={urllib.parse.quote(w_msg)}"
+                    st.markdown(
+                        f"""
+                        <a href="{wa_letter_url}" target="_blank">
+                            <button style="background-color: #25D366; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px;">
+                                📲 WhatsApp પર પત્રની વિગત મોકલો
+                            </button>
+                        </a>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+    with tab_L2:
+        st.write("### 📂 સેવ થયેલા તમામ પત્રોનું ઇન્ડેક્સ (Index)")
+        cursor.execute("SELECT id, outward_no, ref_no, letter_date, recipient, subject FROM letters ORDER BY id DESC")
+        all_letters = cursor.fetchall()
+
+        if all_letters:
+            letter_options = {f"જાવક નં: {l[1]} | તારીખ: {fmt_date(l[3])} | વિષય: {l[5]}": l[0] for l in all_letters}
+            
+            selected_l_label = st.selectbox(
+                "પ્રિન્ટ અથવા એડિટ કરવા માટે પત્ર પસંદ કરો:", 
+                list(letter_options.keys()), 
+                key="letter_index_selectbox"
+            )
+            sel_l_id = letter_options[selected_l_label]
+
+            if sel_l_id:
+                cursor.execute("SELECT id, outward_no, ref_no, letter_date, recipient, subject, body_text FROM letters WHERE id = ?", (sel_l_id,))
+                l_rec = cursor.fetchone()
+                if l_rec:
+                    l_dict = {
+                        "id": l_rec[0],
+                        "outward_no": l_rec[1],
+                        "ref_no": l_rec[2],
+                        "letter_date": l_rec[3],
+                        "recipient": l_rec[4],
+                        "subject": l_rec[5],
+                        "body_text": l_rec[6],
+                    }
+                    
+                    action_mode = st.radio(
+                        "ક્રિયા પસંદ કરો:", 
+                        ["📄 પત્ર જુઓ / પ્રિન્ટ કરો", "✏️ પત્ર એડિટ કરો"], 
+                        horizontal=True, 
+                        key=f"action_mode_{sel_l_id}"
+                    )
+                    
+                    if action_mode == "📄 પત્ર જુઓ / પ્રિન્ટ કરો":
+                        render_html_letter(l_dict)
+                    else:
+                        st.write("#### ✍️ પત્ર સુધારો (Edit Letter)")
+                        with st.form(f"edit_letter_form_{sel_l_id}"):
+                            e_outward = st.text_input("જાવક નંબર *", value=l_dict["outward_no"])
+                            e_ref = st.text_input("સંદર્ભ નંબર", value=l_dict["ref_no"])
+                            
+                            try:
+                                parsed_date = datetime.strptime(l_dict["letter_date"], "%Y-%m-%d").date()
+                            except:
+                                parsed_date = date.today()
+                            e_date = st.date_input("પત્રની તારીખ", value=parsed_date)
+                            
+                            e_recipient = st.text_area("પ્રતિ *", value=l_dict["recipient"])
+                            e_subject = st.text_input("વિષય *", value=l_dict["subject"])
+                            e_body = st.text_area("પત્રનું મુખ્ય લખાણ *", value=l_dict["body_text"], height=200)
+
+                            update_submit = st.form_submit_button("💾 ફેરફારો સેવ કરો (Update)")
+                            if update_submit:
+                                if not e_outward or not e_recipient or not e_subject or not e_body:
+                                    st.error("❌ કૃપા કરીને તમામ જરૂરી ખાના ભરો.")
+                                else:
+                                    cursor.execute("""
+                                        UPDATE letters 
+                                        SET outward_no = ?, ref_no = ?, letter_date = ?, recipient = ?, subject = ?, body_text = ?
+                                        WHERE id = ?
+                                    """, (e_outward.upper(), e_ref.upper(), str(e_date), e_recipient, e_subject, e_body, sel_l_id))
+                                    conn.commit()
+                                    st.success("✅ પત્ર સફળતાપૂર્વક અપડેટ થઈ ગયો છે!")
+        else:
+            st.info("હજુ સુધી કોઈ પત્ર સેવ કરવામાં આવ્યો નથી.")
+
+# ==========================================
+# ૬. એડમિન & ઓપરેટર ડેશબોર્ડ
 # ==========================================
 elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ":
     st.subheader("🔒 માસ્ટર એડમિન પેનલ")
 
-    # --- FINANCIAL METRICS ---
     c_jmn = cursor.execute("SELECT SUM(amount) FROM bookings").fetchone()[0] or 0.0
     c_don = cursor.execute("SELECT SUM(amount) FROM donations").fetchone()[0] or 0.0
     tot_inc = c_jmn + c_don
@@ -954,24 +1301,19 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
 
     st.markdown("---")
 
-    # ============================================================
-    # 🔹 NEW FEATURE: TODAY, NEXT 3 DAYS, & DATE PICKER MEALS VIEW
-    # ============================================================
     st.write("### 📅 જમણવારની યાદી (Check & Inform Donors)")
 
-    # 1️⃣ Date Picker for specific date lookup
     col_d1, col_d2 = st.columns([2, 1])
     with col_d1:
         selected_view_date = st.date_input("**ચોક્કસ તારીખ પસંદ કરો અને જમણવાર જુઓ:**", value=date.today())
     with col_d2:
-        st.write("")  # Spacer for alignment
+        st.write("")
         st.write("")  
         if st.button("🔄 યાદી જુઓ", type="primary"):
             st.session_state["view_date_selected"] = True
 
     view_date_str = str(selected_view_date)
 
-    # 2️⃣ Fetch data for the selected date
     cursor.execute("""
         SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
         FROM bookings WHERE booking_date = ?
@@ -979,13 +1321,12 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
     selected_date_bookings = cursor.fetchall()
 
     if selected_date_bookings:
-        st.info(f"📌 **{view_date_str}** ના કુલ {len(selected_date_bookings)} જમણવાર બુક થયેલ છે.")
+        st.info(f"📌 **{fmt_date(view_date_str)}** ના કુલ {len(selected_date_bookings)} જમણવાર બુક થયેલ છે.")
         
         df_view = pd.DataFrame(selected_date_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
         st.dataframe(df_view, use_container_width=True)
 
-        # WhatsApp Button for this specific date
-        date_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**{view_date_str}** ના જમણવારની યાદી:%0A"
+        date_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**{fmt_date(view_date_str)}** ના જમણવારની યાદી:%0A"
         for b in selected_date_bookings:
             date_msg += f"👤 {b[1]} (મોબાઈલ: {b[2]}) | {b[4]} | રકમ: ₹{b[6]:,.2f}%0A"
         
@@ -1001,11 +1342,10 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
             unsafe_allow_html=True,
         )
     else:
-        st.warning(f"❌ **{view_date_str}** ના રોજ કોઈ જમણવાર બુક થયેલ નથી.")
+        st.warning(f"❌ **{fmt_date(view_date_str)}** ના રોજ કોઈ જમણવાર બુક થયેલ નથી.")
 
     st.markdown("---")
 
-    # 3️⃣ Today's Meals
     today_str = str(date.today())
     cursor.execute("""
         SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount 
@@ -1013,12 +1353,12 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
     """, (today_str,))
     today_bookings = cursor.fetchall()
 
-    st.write(f"### 🟢 આજનો જમણવાર ({today_str})")
+    st.write(f"### 🟢 આજનો જમણવાર ({fmt_date(today_str)})")
     if today_bookings:
         df_today = pd.DataFrame(today_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
         st.dataframe(df_today, use_container_width=True)
         
-        today_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**આજ ({today_str})** ના જમણવારની યાદી:%0A"
+        today_msg = f"નમસ્તે NARMADESHWAR TRUST,%0A%0A**આજ ({fmt_date(today_str)})** ના જમણવારની યાદી:%0A"
         for b in today_bookings:
             today_msg += f"👤 {b[1]} (મોબાઈલ: {b[2]}) | {b[4]} | રકમ: ₹{b[6]:,.2f}%0A"
         
@@ -1038,7 +1378,6 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
 
     st.markdown("---")
 
-    # 4️⃣ Next 3 Days Meals
     st.write("### 🔵 આગામી ૩ દિવસના જમણવાર")
     next_dates = [(date.today() + timedelta(days=i+1)).strftime('%Y-%m-%d') for i in range(3)]
     
@@ -1049,24 +1388,21 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
         """, (nd,))
         nd_bookings = cursor.fetchall()
         
-        st.write(f"**📅 {nd}**")
+        st.write(f"**📅 {fmt_date(nd)}**")
         if nd_bookings:
             df_nd = pd.DataFrame(nd_bookings, columns=["ID", "દાતાશ્રી", "મોબાઈલ", "સેવા નામ", "જમણવાર", "પ્રકાર", "રકમ (₹)"])
             st.dataframe(df_nd, use_container_width=True)
         else:
-            st.caption(f"👉 {nd} ના રોજ કોઈ બુકિંગ નથી.")
+            st.caption(f"👉 {fmt_date(nd)} ના રોજ કોઈ બુકિંગ નથી.")
         
     st.markdown("---")
 
-    # ============================================================
-    # 🔹 OLD FEATURES: List, Receipt, Excel Download (KEPT INTACT)
-    # ============================================================
     st.write("### 📄 જૂની પાવતી / રસીદ જોઈને પ્રિન્ટ કરો")
     cursor.execute("SELECT id, donor_name, booking_date FROM bookings ORDER BY id DESC")
     all_bookings = cursor.fetchall()
 
     if all_bookings:
-        booking_options = {f"રસીદ નં #{b[0]} - {b[1]} (તારીખ: {b[2]})": b[0] for b in all_bookings}
+        booking_options = {f"રસીદ નં #{b[0]} - {b[1]} (તારીખ: {fmt_date(b[2])})": b[0] for b in all_bookings}
         selected_receipt_label = st.selectbox("પ્રિન્ટ કરવા માટે જૂની રસીદ પસંદ કરો:", list(booking_options.keys()))
         selected_id = booking_options[selected_receipt_label]
 
@@ -1099,6 +1435,8 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
         "SELECT id, donor_name AS 'દાતાશ્રી', service_for_name AS 'જેમના નામે સેવા', phone AS 'મોબાઈલ', booking_date AS 'તારીખ', meal_types AS 'જમણવાર', meal_prep_type AS 'પ્રકાર', amount AS 'રકમ (₹)', payment_status AS 'Pay Status', payment_type AS 'Pay Type' FROM bookings ORDER BY id DESC",
         conn,
     )
+    if not df_b.empty and 'તારીખ' in df_b.columns:
+        df_b['તારીખ'] = df_b['તારીખ'].apply(fmt_date)
     st.dataframe(df_b, use_container_width=True)
 
     st.markdown("---")
@@ -1110,6 +1448,7 @@ elif choice == "📊 એડમિન & હિસાબ ડેશબોર્ડ"
         pd.read_sql_query("SELECT * FROM donations", conn).to_excel(writer, sheet_name="Donations", index=False)
         pd.read_sql_query("SELECT * FROM expenses", conn).to_excel(writer, sheet_name="Expenses", index=False)
         pd.read_sql_query("SELECT * FROM inventory", conn).to_excel(writer, sheet_name="Inventory", index=False)
+        pd.read_sql_query("SELECT * FROM letters", conn).to_excel(writer, sheet_name="Letters", index=False)
 
     st.download_button(
         label="📥 તમામ ડેટા Excel માં ડાઉનલોડ કરો",
