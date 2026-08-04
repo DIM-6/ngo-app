@@ -180,11 +180,8 @@ st.markdown(
         border-radius: 6px !important;
     }
 
-    /* Hide sidebar entirely to prevent any layout or mobile issues */
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
-
+    /* Hide sidebar and unwanted icon text artifacts */
+    [data-testid="stSidebar"] { display: none !important; }
     footer, #MainMenu { display: none !important; }
 
     /* ===== CARD BUTTON STYLING FOR JAMANVAR ===== */
@@ -747,16 +744,18 @@ else:
 st.markdown("---")
 
 # ==========================================
-# 🔒 TOP LOGIN & TOP NAVIGATION MENU (NO SIDEBAR)
+# 🔒 TOP LOGIN & TOP NAVIGATION MENU (CLEAN, NO EXPANDER ARROW/VISIBILITY ARTIFACTS)
 # ==========================================
-col_login, col_status = st.columns([2, 2])
-with col_login:
-    with st.expander("🔑 સ્ટાફ / એડમિન લોગિન"):
-        login_pwd = st.text_input(
-            "પાસવર્ડ દાખલ કરો", 
-            type="password", 
-            key="top_login_pwd"
-        )
+st.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
+col_pwd, col_status = st.columns([2, 2])
+with col_pwd:
+    login_pwd = st.text_input(
+        "પાસવર્ડ દાખલ કરો", 
+        type="password", 
+        key="top_login_pwd",
+        label_visibility="collapsed",
+        placeholder="પાસવર્ડ દાખલ કરો"
+    )
 
 if login_pwd == "ngo123":
     st.session_state["is_admin"] = True
