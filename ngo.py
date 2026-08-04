@@ -770,33 +770,42 @@ st.markdown("---")
 # 🔒 TOP LOGIN & TOP NAVIGATION MENU
 # ==========================================
 st.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
-col_pwd, col_status = st.columns([2, 2])
-with col_pwd:
-    login_pwd = st.text_input(
-        "પાસવર્ડ દાખલ કરો", 
-        key="top_login_pwd",
-        label_visibility="collapsed",
-        placeholder="પાસવર્ડ દાખલ કરો (દા.ત. ngo123)"
-    )
-    
-if login_pwd == "ngo123":
-    st.session_state["i    s_admin"] = True
-    st.session_state["is_operator"] = True
-    with col_status:
-        st.success("🔓 માસ્ટર એડમિન મોડ સક્રિય!")
-elif login_pwd == "op123":
-    st.session_state["is_admin"] = False
-    st.session_state["is_operator"] = True
-    with col_status:
-        st.success("🔓 ઓપરેટર મોડ સક્રિય!")
-elif login_pwd != "":
-    st.session_state["is_admin"] = False
-    st.session_state["is_operator"] = False
-    with col_status:
-        st.error("❌ ખોટો પાસવર્ડ!")
+
+# જો યુઝર પહેલેથી લોગિન થયેલ ન હોય તો જ પાસવર્ડ બૉક્સ બતાવો
+if not st.session_state.get("is_admin", False) and not st.session_state.get("is_operator", False):
+    col_pwd, col_status = st.columns([2, 2])
+    with col_pwd:
+        login_pwd = st.text_input(
+            "પાસવર્ડ દાખલ કરો", 
+            key="top_login_pwd",
+            label_visibility="collapsed",
+            placeholder="પાસવર્ડ દાખલ કરો"
+        )
+
+    if login_pwd == "ngo123":
+        st.session_state["is_admin"] = True
+        st.session_state["is_operator"] = True
+        st.rerun()
+    elif login_pwd == "op123":
+        st.session_state["is_admin"] = False
+        st.session_state["is_operator"] = True
+        st.rerun()
+    elif login_pwd != "":
+        with col_status:
+            st.error("❌ ખોટો પાးવર્ડ!")
 else:
-    st.session_state["is_admin"] = False
-    st.session_state["is_operator"] = False
+    # લોગિન થઈ ગયા પછી પાસવર્ડ બોક્સ ગાયબ થઈ જશે અને આ દેખાશે
+    col_msg, col_out = st.columns([3, 1])
+    with col_msg:
+        if st.session_state.get("is_admin", False):
+            st.success("🔓 માસ્ટર એડમિન મોડ સક્રિય છે!")
+        else:
+            st.success("🔓 ઓપરેટર મોડ સક્રિય છે!")
+    with col_out:
+        if st.button("🚪 લોગ આઉટ (Logout)"):
+            st.session_state["is_admin"] = False
+            st.session_state["is_operator"] = False
+            st.rerun()
 
 if st.session_state.get("is_admin", False):
     menu = [
