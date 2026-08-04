@@ -864,9 +864,8 @@ else:
 st.markdown("---")
 st.markdown("### 📌 મુખ્ય મેનૂ")
 
-# Handle menu selection via query parameters for stunning compact stylish buttons
-query_params = st.experimental_get_query_params()
-saved_menu = query_params.get("menu", [None])[0]
+# Fixed for modern Streamlit Cloud: st.query_params
+saved_menu = st.query_params.get("menu")
 
 if saved_menu in menu:
     choice = saved_menu
@@ -1048,7 +1047,7 @@ if choice == "🍲 જમણવાર બુકિંગ":
                 )
                 conn.commit()
                 last_id = cursor.lastrowid
-                st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વਕ સેવ થઈ ગયું છે!")
+                st.success("🎉 જમણવાર બુકિંગ સફળતાપૂર્વક સેવ થઈ ગયું છે!")
 
                 st.session_state["selected_meals_list"] = []
 
