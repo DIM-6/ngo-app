@@ -151,11 +151,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS WITH FULL WIDTH BUTTON FIX
+# 🎨 CLEAN CSS WITH MATERIAL ICONS FIX FOR PASSWORD VISIBILITY
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #FFFFFF !important;
