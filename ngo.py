@@ -148,10 +148,10 @@ st.set_page_config(
     page_title="NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST",
     page_icon="🍲",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS (Stray texts removed)
+# 🎨 CLEAN CSS
 st.markdown(
     """
     <style>
@@ -180,6 +180,11 @@ st.markdown(
         border-radius: 6px !important;
     }
 
+    /* Hide sidebar entirely to prevent any layout or mobile issues */
+    [data-testid="stSidebar"] {
+        display: none !important;
+    }
+
     footer, #MainMenu { display: none !important; }
 
     /* ===== CARD BUTTON STYLING FOR JAMANVAR ===== */
@@ -199,7 +204,7 @@ st.markdown(
 
     /* ===== MAIN FORM SIZING FIXED ===== */
     .main .block-container {
-        max-width: 780px !important;
+        max-width: 900px !important;
         margin: 0 auto !important;
         padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
@@ -742,33 +747,35 @@ else:
 st.markdown("---")
 
 # ==========================================
-# 🔒 LOGIN SYSTEM (With Show/Hide Checkbox)
+# 🔒 TOP LOGIN & TOP NAVIGATION MENU (NO SIDEBAR)
 # ==========================================
-st.sidebar.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
-show_pass = st.sidebar.checkbox("Show Password (પાસવર્ડ બતાવો)", key="toggle_show_pass")
-login_pwd = st.sidebar.text_input(
-    "પાસવર્ડ દાખલ કરો", 
-    type="text" if show_pass else "password", 
-    key="side_login_pwd"
-)
+col_login, col_status = st.columns([2, 2])
+with col_login:
+    with st.expander("🔑 સ્ટાફ / એડમિન લોગિન"):
+        login_pwd = st.text_input(
+            "પાસવર્ડ દાખલ કરો", 
+            type="password", 
+            key="top_login_pwd"
+        )
 
 if login_pwd == "ngo123":
     st.session_state["is_admin"] = True
     st.session_state["is_operator"] = True
-    st.sidebar.success("🔓 માસ્ટર એડમિન મોડ!")
+    with col_status:
+        st.success("🔓 માસ્ટર એડમિન મોડ સક્રિય!")
 elif login_pwd == "op123":
     st.session_state["is_admin"] = False
     st.session_state["is_operator"] = True
-    st.sidebar.success("🔓 ઓપરેટર મોડ સક્રિય!")
+    with col_status:
+        st.success("🔓 ઓપરેટર મોડ સક્રિય!")
 elif login_pwd != "":
     st.session_state["is_admin"] = False
     st.session_state["is_operator"] = False
-    st.sidebar.error("❌ ખોટો પાસવર્ડ!")
+    with col_status:
+        st.error("❌ ખોટો પાસવર્ડ!")
 else:
     st.session_state["is_admin"] = False
     st.session_state["is_operator"] = False
-
-st.sidebar.markdown("---")
 
 if st.session_state.get("is_admin", False):
     menu = [
@@ -794,7 +801,9 @@ else:
         "🎁 સામાન્ય દાન (Donation)",
     ]
 
-choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
+st.markdown("---")
+choice = st.radio("📌 મુખ્ય મેનૂ", menu, horizontal=True)
+st.markdown("---")
 
 # ==========================================
 # ૧. જમણવાર બુકિંગ મોડ્યુલ
