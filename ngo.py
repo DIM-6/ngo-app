@@ -774,14 +774,13 @@ col_pwd, col_status = st.columns([2, 2])
 with col_pwd:
     login_pwd = st.text_input(
         "પાસવર્ડ દાખલ કરો", 
-        type="password", 
         key="top_login_pwd",
         label_visibility="collapsed",
-        placeholder="પાસવર્ડ દાખલ કરો"
+        placeholder="પાસવર્ડ દાખલ કરો (દા.ત. ngo123)"
     )
-
+    
 if login_pwd == "ngo123":
-    st.session_state["is_admin"] = True
+    st.session_state["i    s_admin"] = True
     st.session_state["is_operator"] = True
     with col_status:
         st.success("🔓 માસ્ટર એડમિન મોડ સક્રિય!")
