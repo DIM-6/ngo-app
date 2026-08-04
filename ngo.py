@@ -151,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS WITH ZERO GAP BETWEEN LOGO AND TEXT
+# 🎨 CLEAN CSS WITH BALANCED LEFT-ALIGNED HEADER
 st.markdown(
     """
     <style>
@@ -216,12 +216,12 @@ st.markdown(
         font-size: 0.9rem !important;
     }
     
-    /* ===== HEADER STYLES (75% WIDTH, ZERO GAP) ===== */
+    /* ===== HEADER STYLES (75% WIDTH, TIGHTLY GROUPED & LEFT ALIGNED) ===== */
     .header-wrapper {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 0px;
+        justify-content: flex-start;
+        gap: 25px;
         margin-bottom: 5px;
         border-top: 5px solid #F39C12;
         padding-top: 15px;
@@ -230,7 +230,7 @@ st.markdown(
         margin-right: auto !important;
     }
     .header-wrapper img {
-        height: 130px !important; 
+        height: 120px !important; 
         width: auto; 
         object-fit: contain;
         flex-shrink: 0;
@@ -239,14 +239,13 @@ st.markdown(
         display: flex;
         flex-direction: column;
         justify-content: center;
-        text-align: center;
+        text-align: left;
         line-height: 1.35;
-        width: 100%;
     }
-    .h-title-1 { color: #16A34A !important; font-size: 26px !important; font-weight: 900 !important; margin: 0 !important; letter-spacing: 7px !important; }
-    .h-title-2 { color: #0284C7 !important; font-size: 19px !important; font-weight: 800 !important; margin: 0 !important; letter-spacing: 5px !important; }
-    .h-title-3 { color: #1E3A8A !important; font-size: 19px !important; font-weight: 800 !important; margin: 0 !important; letter-spacing: 5px !important; }
-    .h-reg { color: #4B5563 !important; font-size: 11px !important; font-weight: bold !important; margin: 5px 0 0 0 !important; letter-spacing: 2px !important; }
+    .h-title-1 { color: #16A34A !important; font-size: 24px !important; font-weight: 900 !important; margin: 0 !important; letter-spacing: 5px !important; }
+    .h-title-2 { color: #0284C7 !important; font-size: 18px !important; font-weight: 800 !important; margin: 0 !important; letter-spacing: 4px !important; }
+    .h-title-3 { color: #1E3A8A !important; font-size: 18px !important; font-weight: 800 !important; margin: 0 !important; letter-spacing: 4px !important; }
+    .h-reg { color: #4B5563 !important; font-size: 11px !important; font-weight: bold !important; margin: 5px 0 0 0 !important; letter-spacing: 1.5px !important; }
     .h-sub-text { 
         color: #4B5563 !important; 
         font-size: 13px; 
@@ -255,7 +254,7 @@ st.markdown(
         display: flex; 
         gap: 8px; 
         flex-wrap: wrap; 
-        justify-content: center;
+        justify-content: flex-start;
         letter-spacing: 1px !important;
     }
 
@@ -268,13 +267,22 @@ st.markdown(
         .header-wrapper {
             width: 100% !important;
             flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
             gap: 12px !important;
+        }
+        .header-text-box {
+            text-align: center !important;
+            align-items: center !important;
+        }
+        .h-sub-text {
+            justify-content: center !important;
         }
         .header-wrapper img {
             height: 100px !important;
         }
-        .h-title-1 { font-size: 22px !important; letter-spacing: 3px !important; }
-        .h-title-2, .h-title-3 { font-size: 16px !important; letter-spacing: 2.5px !important; }
+        .h-title-1 { font-size: 20px !important; letter-spacing: 2px !important; }
+        .h-title-2, .h-title-3 { font-size: 15px !important; letter-spacing: 2px !important; }
     }
     </style>
 """,
@@ -701,7 +709,7 @@ def render_html_letter(letter_info):
 
 
 # ==========================================
-# 🎯 HEADER DESIGN (75% WIDTH, ZERO GAP)
+# 🎯 HEADER DESIGN (75% WIDTH, BALANCED & LEFT-ALIGNED)
 # ==========================================
 logo_b64_main = get_image_base64(LOGO_PATH)
 
