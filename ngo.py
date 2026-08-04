@@ -151,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 🎨 CSS & JS STYLING
+# 🎨 CSS & JS STYLING (Fixed icon rendering and layout glitches)
 st.markdown(
     """
     <style>
@@ -178,14 +178,6 @@ st.markdown(
         color: #111827 !important;
         border: 1px solid #D1D5DB !important;
         border-radius: 6px !important;
-    }
-
-    span[data-baseweb="icon"] svg, button[kind="header"] svg {
-        display: block !important;
-    }
-    
-    .material-symbols-rounded, .icon-text {
-        display: none !important;
     }
 
     footer, #MainMenu { display: none !important; }
@@ -277,17 +269,6 @@ st.markdown(
         .h-title-2, .h-title-3 { font-size: 15px !important; }
     }
     </style>
-
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        setTimeout(function() {
-            const toggleCtrl = document.querySelector('[data-testid="collapsedControl"]');
-            if (toggleCtrl) {
-                toggleCtrl.title = "Click To see Side Panel (<< >>)";
-            }
-        }, 1000);
-    });
-    </script>
 """,
     unsafe_allow_html=True,
 )
@@ -675,7 +656,6 @@ def render_html_letter(letter_info):
                 </div>
             </div>
             
-            <!-- First Line: Outward No and Date -->
             <div class="meta-row">
                 <div>જાવક નં: {letter_info.get('outward_no', 'N/A')}</div>
                 <div>તારીખ: {fmt_date(letter_info.get('letter_date', 'N/A'))}</div>
@@ -686,7 +666,6 @@ def render_html_letter(letter_info):
                 {letter_info.get('recipient', '').replace(chr(10), '<br>')}
             </div>
 
-            <!-- Subject First, then Reference Number -->
             <div>
                 <span class="subject-box">વિષય: {letter_info.get('subject', '')}</span>
             </div>
@@ -763,11 +742,14 @@ else:
 st.markdown("---")
 
 # ==========================================
-# 🔒 LOGIN SYSTEM (Show / Hide Password Label Helper)
+# 🔒 LOGIN SYSTEM (With Show/Hide Checkbox)
 # ==========================================
-st.sidebar.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન (Show / Hide)")
+st.sidebar.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
+show_pass = st.sidebar.checkbox("Show Password (પાસવર્ડ બતાવો)", key="toggle_show_pass")
 login_pwd = st.sidebar.text_input(
-    "પાસવર્ડ દાખલ કરો (Show)", type="password", key="side_login_pwd"
+    "પાસવર્ડ દાખલ કરો", 
+    type="text" if show_pass else "password", 
+    key="side_login_pwd"
 )
 
 if login_pwd == "ngo123":
@@ -812,10 +794,10 @@ else:
         "🎁 સામાન્ય દાન (Donation)",
     ]
 
-choice = st.sidebar.radio("📌 મુખ્ય મેનૂ (<< >> Click To see Side Panel)", menu)
+choice = st.sidebar.radio("📌 મુખ્ય મેનૂ", menu)
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ (CARD CLICK TO SELECT)
+# ૧. જમણવાર બુકિંગ મોડ્યુલ
 # ==========================================
 if choice == "🍲 જમણવાર બુકિંગ":
     st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
