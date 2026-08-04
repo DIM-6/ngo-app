@@ -1,5 +1,5 @@
-streamlit
+streamlit==1.60.0
 pandas
 pillow
-openpyxl
 reportlab
+openpyxl
