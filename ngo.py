@@ -151,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS WITH MATERIAL ICONS FIX FOR PASSWORD VISIBILITY
+# 🎨 CLEAN CSS WITH PASSWORD VISIBILITY REMOVAL FIX
 st.markdown(
     """
     <style>
@@ -260,6 +260,11 @@ st.markdown(
         flex-wrap: wrap; 
         justify-content: flex-start;
         letter-spacing: 1px !important;
+    }
+
+    /* ===== PASSWORD VISIBILITY HIDE FIX ===== */
+    [data-baseweb="input"] button {
+        display: none !important;
     }
 
     @media (max-width: 768px) {
@@ -767,18 +772,14 @@ st.markdown("---")
 st.markdown("### 🔑 સ્ટાફ / એડમિન લોગિન")
 col_pwd, col_status = st.columns([2, 2])
 with col_pwd:
-    # પાસવર્ડ જોવા કે છુપાવવા માટેનું ચેકબોક્સ
-    show_password = st.checkbox("પાસવર્ડ દેખાડો (Show Password)", key="show_pwd_check")
-    input_type = "default" if show_password else "password"
-
     login_pwd = st.text_input(
         "પાસવર્ડ દાખલ કરો", 
-        type=input_type, 
+        type="password", 
         key="top_login_pwd",
         label_visibility="collapsed",
         placeholder="પાસવર્ડ દાખલ કરો"
     )
-    
+
 if login_pwd == "ngo123":
     st.session_state["is_admin"] = True
     st.session_state["is_operator"] = True
