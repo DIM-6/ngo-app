@@ -9,12 +9,8 @@ from PIL import Image
 import streamlit as st
 import streamlit.components.v1 as components
 
-
 from reportlab.lib.pagesizes import A4, A6
 from reportlab.pdfgen import canvas
-
-st.cache_data.clear()
-st.cache_resource.clear()
 
 # ==========================================
 # DATABASE SETUP (SQLite)
@@ -155,7 +151,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS WITH FULL WIDTH BUTTON FIX FOR LIVE APP
+# 🎨 CLEAN CSS WITH FULL WIDTH BUTTON FIX
 st.markdown(
     """
     <style>
@@ -188,7 +184,7 @@ st.markdown(
     [data-testid="stSidebar"] { display: none !important; }
     footer, #MainMenu { display: none !important; }
 
-    /* ===== CARD BUTTON STYLING FIX FOR LIVE APP ===== */
+    /* ===== CARD BUTTON STYLING FIX ===== */
     div.stButton {
         width: 100% !important;
     }
@@ -874,7 +870,12 @@ if choice == "🍲 જમણવાર બુકિંગ":
                 status_label = "✓ સિલેક્ટ થયેલ (હટાવવા ક્લિક કરો)" if is_selected else "સિલેક્ટ કરવા ક્લિક કરો"
                 card_button_text = f"{meal}\n₹{rate_display}\n{status_label}"
                 
-                if st.button(card_button_text, key=f"card_btn_{idx}", type="primary" if is_selected else "secondary"):
+                if st.button(
+                    card_button_text, 
+                    key=f"card_btn_{idx}", 
+                    type="primary" if is_selected else "secondary",
+                    use_container_width=True
+                ):
                     if is_selected:
                         st.session_state["selected_meals_list"].remove(meal)
                     else:
