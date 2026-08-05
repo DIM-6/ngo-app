@@ -1168,16 +1168,21 @@ def render_booking_module():
         render_html_receipt(booking_dict)
 
         msg = (
-            f"નમસ્તે NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST,%0A%0A"
-            f"મેં જમણવાર બુક કર્યો છે:%0A"
-            f"👤 દાતાશ્રી: {donor_name}%0A"
-            f"🙏 સેવા નામ: {service_for_name}%0A"
-            f"📅 તારીખ: {fmt_date(date_str)}%0A"
-            f"🎁 નિમિત્ત: {meal_occasion.upper()}%0A"
-            f"🍲 જમણવાર: {meals_str}%0A"
-            f"🥣 પ્રકાર: {meal_prep_type}%0A"
-            f"💰 રકમ: ₹{final_amount}%0A"
-            f"💳 પેમેન્ટ સ્ટેટસ: {payment_status}"
+            f"*NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST*%0A"
+            f"* જમણવાર બુકીંગનો કનફર્મેશન મેસેજ*%0A%0A"
+            f"નમસ્તે,%0A"
+            f"દાતાશ્રીનુ નામ : {donor_name}%0A"
+            f"જેમના નામે સેવા આપવી હોય તેમનું નામ : {service_for_name}%0A"
+            f"જમણવારની તારીખ : {fmt_date(date_str)}%0A"
+            f"જમણવાર : {meals_str}%0A"
+            f"દાતાશ્રીનો મોબાઈલ નંબર : {donor_phone}%0A"
+            f"જમણવારનો પ્રકાર : {meal_prep_type}%0A"
+            f"જમણવારનું નિમિત્ત (Occasion) : {meal_occasion.upper()}%0A"
+            f"જમણવાર / દાનની રકમ (₹) : ₹{final_amount}%0A"
+            f"Payment Type (પેમેન્ટનો પ્રકાર): {payment_type}%0A"
+            f"Payment આવી ગયેલ છે? : {payment_status}%0A%0A"
+            f"*આપના સહકાર બદલ ખુબ ખુબ આભાર*%0A"
+            f"*સહકાર આપો અને અપાવો *"
         )
 
         if is_admin or is_operator:
@@ -1379,7 +1384,7 @@ def render_inventory_module():
 
 
 # ==========================================
-# 5. લેટર ટાઇપિંગ (Letters) - Clean Edit Flow
+# 5. લેટર ટાઇપિંગ (Letters)
 # ==========================================
 def render_letter_module():
   st.write("#### 📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
@@ -1489,7 +1494,6 @@ def render_letter_module():
               "body_text": l_rec[6],
           }
 
-          # Clean Edit Button
           col_btn_edit, col_empty = st.columns([1, 3])
           with col_btn_edit:
             if st.button("Edit Letter", key=f"btn_edit_toggle_{sel_l_id}"):
@@ -1499,7 +1503,6 @@ def render_letter_module():
                 st.session_state["editing_letter_id"] = sel_l_id
               st.rerun()
 
-          # Show Edit Form if toggled
           if st.session_state["editing_letter_id"] == sel_l_id:
             st.markdown("---")
             st.write("##### ✍️ પત્ર એડિટ કરો:")
@@ -1631,11 +1634,22 @@ def render_dashboard_module():
           if not clean_p.startswith("91"):
             clean_p = "91" + clean_p
           w_text = (
-              f"નમસ્તે {b_donor}, NARMADESHWAR TRUST માં આપના {b_meal}"
-              f" બુકિંગ ({b_occ}, તારીખ: {fmt_date(ud)}) બદલ આભાર! રકમ:"
-              f" ₹{b_amt:,.2f}"
+              f"*NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST*%0A"
+              f"* જમણવાર બુકીંગનો કનફર્મેશન મેસેજ*%0A%0A"
+              f"નમસ્તે,%0A"
+              f"દાતાશ્રીનુ નામ : {b_donor}%0A"
+              f"જેમના નામે સેવા આપવી હોય તેમનું નામ : {b_service}%0A"
+              f"જમણવારની તારીખ : {fmt_date(ud)}%0A"
+              f"જમણવાર : {b_meal}%0A"
+              f"દાતાશ્રીનો મોબાઈલ નંબર : {b_phone}%0A"
+              f"જમણવારનો પ્રકાર : {b_prep}%0A"
+              f"જમણવારનું નિમિત્ત (Occasion) : {b_occ}%0A"
+              f"જમણવાર / દાનની રકમ (₹) : ₹{b_amt}%0A"
+              f"Payment Status: {b_pstat}%0A%0A"
+              f"*આપના સહકાર બદલ ખુબ ખુબ આભાર*%0A"
+              f"*સહકાર આપો અને અપાવો *"
           )
-          w_link = f"https://api.whatsapp.com/send?phone={clean_p}&text={urllib.parse.quote(w_text)}"
+          w_link = f"https://api.whatsapp.com/send?phone={clean_p}&text={w_text}"
           st.markdown(
               f"""<a href="{w_link}" target="_blank"><button style="background-color: #25D366; color: white; padding: 4px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; width: 100%;">📲 WhatsApp</button></a>""",
               unsafe_allow_html=True,
@@ -1695,8 +1709,22 @@ def render_dashboard_module():
           clean_p = "".join(c for c in str(b_phone) if c.isdigit())
           if not clean_p.startswith("91"):
             clean_p = "91" + clean_p
-          w_text = f"નમસ્તે {b_donor}, NARMADESHWAR TRUST માં {fmt_date(b_date)} ના બુકિંગ સંદર્ભે."
-          w_link = f"https://api.whatsapp.com/send?phone={clean_p}&text={urllib.parse.quote(w_text)}"
+          w_text = (
+              f"*NARMADESHWAR VIKLANG VIKAAS MANAV SEVA TRUST*%0A"
+              f"* જમણવાર બુકીંગનો કનફર્મેશન મેસેજ*%0A%0A"
+              f"નમસ્તે,%0A"
+              f"દાતાશ્રીનુ નામ : {b_donor}%0A"
+              f"જેમના નામે સેવા આપવી હોય તેમનું નામ : {b_service}%0A"
+              f"જમણવારની તારીખ : {fmt_date(b_date)}%0A"
+              f"જમણવાર : {b_meal}%0A"
+              f"દાતાશ્રીનો મોબાઈલ નંબર : {b_phone}%0A"
+              f"જમણવારનો પ્રકાર : {b_prep}%0A"
+              f"જમણવારનું નિમિત્ત (Occasion) : {b_occ}%0A"
+              f"જમણવાર / દાનની રકમ (₹) : ₹{b_amt}%0A%0A"
+              f"*આપના સહકાર બદલ ખુબ ખુબ આભાર*%0A"
+              f"*સહકાર આપો અને અપાવો *"
+          )
+          w_link = f"https://api.whatsapp.com/send?phone={clean_p}&text={w_text}"
           st.markdown(
               f"""<a href="{w_link}" target="_blank"><button style="background-color: #25D366; color: white; padding: 4px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; width: 100%;">📲 WhatsApp</button></a>""",
               unsafe_allow_html=True,
