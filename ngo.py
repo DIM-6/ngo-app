@@ -886,7 +886,7 @@ else:
 
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ
+# ૧. જમણવાર બુકિંગ મોડ્યુલ (Occasion Dropdown & Corrected Parsing)
 # ==========================================
 def render_booking_module():
   st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -903,7 +903,7 @@ def render_booking_module():
 
   date_str = str(booking_date)
 
-  # Define opt1, opt2, opt3 first!
+  # Define opt1, opt2, opt3 first
   opt1 = ALL_MEALS[0]
   opt2 = ALL_MEALS[1]
   opt3 = ALL_MEALS[2]
@@ -1072,11 +1072,30 @@ def render_booking_module():
           else ""
       )
 
-    meal_occasion = st.text_input(
+    # ૭. જમણવારનું નિમિત્ત (Occasion) Dropdown
+    occasion_options = [
+        "જન્મદિન નિમિત્તે",
+        "પુણ્યતિથિ નિમિત્તે",
+        "લગ્નતિથિ / લગ્નવર્ષગાંઠ નિમિત્તે",
+        "સ્વજનની યાદમાં / સ્મરણાર્થે",
+        "શુભ પ્રસંગ / તહેવાર નિમિત્તે",
+        "કોઈપણ ખાસ સિદ્ધિ કે ખુશીના પ્રસંગે",
+        "સામાન્ય માનવસેવા અર્થે",
+        "અન્ય",
+    ]
+    selected_occasion = st.selectbox(
         "૭. જમણવારનું નિમિત્ત (Occasion) *",
-        placeholder="દા.ત. જન્મદિન નિમિત્તે / પુણ્યતિથિ",
-        key="meal_occasion_input",
+        options=occasion_options,
+        key="meal_occasion_select",
     )
+
+    if selected_occasion == "અન્ય":
+      custom_occ = st.text_input(
+          "અન્ય નિમિત્ત દાખલ કરો *", placeholder="નિમિત્ત લખો...", key="custom_occ"
+      )
+      meal_occasion = custom_occ if custom_occ else "અન્ય"
+    else:
+      meal_occasion = selected_occasion
 
     payment_status = "Yes (આવી ગયેલ છે)"
     payment_type = "Cash (રોકડ)"
