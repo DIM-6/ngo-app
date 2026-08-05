@@ -50,7 +50,6 @@ CREATE TABLE IF NOT EXISTS bookings (
 )
 """)
 
-# Safe migration for existing database to add 'occasion' column if missing
 try:
   cursor.execute("ALTER TABLE bookings ADD COLUMN occasion TEXT")
   conn.commit()
@@ -887,7 +886,7 @@ else:
 
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ
+# ૧. જમણવાર બુકિંગ મોડ્યુલ (Precise Slot-Wise & Full-Day Logic)
 # ==========================================
 def render_booking_module():
   st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -908,9 +907,12 @@ def render_booking_module():
       "SELECT meal_types FROM bookings WHERE booking_date = ?", (date_str,)
   )
   booked_records = cursor.fetchall()
-  booked_meals = [
-      m for row in booked_records if row[0] for m in row[0].split(", ")
-  ]
+  booked_meals = []
+  for row in booked_records:
+    if row[0]:
+      for m in row[0].split(", "):
+        if m not in booked_meals:
+          booked_meals.append(m)
 
   meal_prep_type = st.radio(
       "૨. જમણવારનો પ્રકાર પસંદ કરો *",
@@ -931,19 +933,29 @@ def render_booking_module():
 
   current_list = st.session_state["selected_meals_list"]
 
-  is_2_or_3_booked = (opt2 in booked_meals) or (opt3 in booked_meals)
-  is_2_or_3_selected = (opt2 in current_list) or (opt3 in current_list)
+  is_opt1_booked = opt1 in booked_meals
+  is_opt2_booked = opt2 in booked_meals
+  is_opt3_booked = opt3 in booked_meals
+
+  is_opt1_selected = opt1 in current_list
+  is_opt2_selected = opt2 in current_list
+  is_opt3_selected = opt3 in current_list
 
   for c_idx, meal in enumerate(ALL_MEALS):
     rate_display = int(MEAL_RATES[meal])
     is_booked = meal in booked_meals
 
     is_disabled_logic = False
-    if meal == opt1:
-      if is_2_or_3_booked or is_2_or_3_selected:
+    
+    # Logic implementation:
+    # 1. If Option 1 is booked or selected -> Disable #2 and #3
+    if is_opt1_booked or is_opt1_selected:
+      if meal != opt1:
         is_disabled_logic = True
-    else:
-      if (opt1 in booked_meals) or (opt1 in current_list):
+
+    # 2. If Option 2 or Option 3 is booked or selected -> Disable #1
+    if meal == opt1:
+      if is_opt2_booked or is_opt3_booked or is_opt2_selected or is_opt3_selected:
         is_disabled_logic = True
 
     if is_booked or is_disabled_logic:
