@@ -886,7 +886,7 @@ else:
 
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ (Accurate Parsing & Slot Logic)
+# ૧. જમણવાર બુકિંગ મોડ્યુલ
 # ==========================================
 def render_booking_module():
   st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -903,6 +903,11 @@ def render_booking_module():
 
   date_str = str(booking_date)
 
+  # Define opt1, opt2, opt3 first!
+  opt1 = ALL_MEALS[0]
+  opt2 = ALL_MEALS[1]
+  opt3 = ALL_MEALS[2]
+
   cursor.execute(
       "SELECT meal_types FROM bookings WHERE booking_date = ?", (date_str,)
   )
@@ -911,7 +916,6 @@ def render_booking_module():
   for row in booked_records:
     if row[0]:
       val = row[0].strip()
-      # If Option 1 was booked, the exact string matches opt1
       if val == opt1:
         if opt1 not in booked_meals:
           booked_meals.append(opt1)
@@ -933,10 +937,6 @@ def render_booking_module():
   if "selected_meals_list" not in st.session_state:
     st.session_state["selected_meals_list"] = []
 
-  opt1 = ALL_MEALS[0]
-  opt2 = ALL_MEALS[1]
-  opt3 = ALL_MEALS[2]
-
   current_list = st.session_state["selected_meals_list"]
 
   is_opt1_booked = opt1 in booked_meals
@@ -953,12 +953,10 @@ def render_booking_module():
 
     is_disabled_logic = False
     
-    # 1. If Option 1 is already booked in DB or currently selected, disable 2 and 3
     if is_opt1_booked or is_opt1_selected:
       if meal != opt1:
         is_disabled_logic = True
 
-    # 2. If Option 2 or 3 is booked in DB or currently selected, disable 1
     if meal == opt1:
       if is_opt2_booked or is_opt3_booked or is_opt2_selected or is_opt3_selected:
         is_disabled_logic = True
