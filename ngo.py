@@ -201,7 +201,7 @@ st.markdown(
         box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
     }
 
-    /* ===== MEAL SELECTION BUTTON्स: CENTER ALIGNMENT & COLORS ===== */
+    /* ===== MEAL SELECTION BUTTONS: CENTER ALIGNMENT & COLORS ===== */
     div.row-widget.stButton > button[kind="secondary"], 
     button[data-testid="baseButton-secondary"] {
         background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%) !important;
@@ -1343,13 +1343,16 @@ def render_inventory_module():
 
 
 # ==========================================
-# 5. લેટર ટાઇપિંગ (Letters) - No Symbols in Edit
+# 5. લેટર ટાઇપિંગ (Letters) - Clean Edit Button Flow
 # ==========================================
 def render_letter_module():
   st.write("#### 📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
   tab_L1, tab_L2 = st.tabs(
       ["✍️ નવો પત્ર બનાવો", "📂 જૂના પત્રોનું લિસ્ટ (Index) & પ્રિન્ટ / એડિટ"]
   )
+
+  if "editing_letter_id" not in st.session_state:
+    st.session_state["editing_letter_id"] = None
 
   with tab_L1:
     with st.form("letter_form", clear_on_submit=True):
@@ -1414,7 +1417,7 @@ def render_letter_module():
           render_html_letter(letter_dict)
 
   with tab_L2:
-    st.write("##### 📂 સેવ થયેલા તમામ પત્રોનું ઇન્ડેક્સ (Index) & એડિટ")
+    st.write("##### 📂 સેવ થયેલા તમામ પત્રોનું ઇન્ડેક્સ (Index)")
     cursor.execute(
         "SELECT id, outward_no, ref_no, letter_date, recipient, subject FROM"
         " letters ORDER BY id DESC"
@@ -1450,10 +1453,20 @@ def render_letter_module():
               "body_text": l_rec[6],
           }
 
-          # Edit Form for existing letter (No Symbols/Arrows)
-          with st.expander(
-              "આ પત્રમાં સુધારો કરો (Edit Letter)", expanded=False
-          ):
+          # Clean Edit Button
+          col_btn_edit, col_empty = st.columns([1, 3])
+          with col_btn_edit:
+            if st.button("Edit Letter", key=f"btn_edit_toggle_{sel_l_id}"):
+              if st.session_state["editing_letter_id"] == sel_l_id:
+                st.session_state["editing_letter_id"] = None
+              else:
+                st.session_state["editing_letter_id"] = sel_l_id
+              st.rerun()
+
+          # Show Edit Form if toggled
+          if st.session_state["editing_letter_id"] == sel_l_id:
+            st.markdown("---")
+            st.write("##### ✍️ પત્ર એડિટ કરો:")
             with st.form(f"edit_letter_form_{sel_l_id}"):
               e_outward = st.text_input(
                   "જાવક નંબર (Outward No.)", value=l_dict["outward_no"]
@@ -1498,6 +1511,7 @@ def render_letter_module():
                     ),
                 )
                 conn.commit()
+                st.session_state["editing_letter_id"] = None
                 st.success("✅ પત્ર સફળતાપૂર્વક અપડેટ થઈ ગયો!")
                 st.rerun()
 
