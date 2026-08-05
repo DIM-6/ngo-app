@@ -154,7 +154,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS: LIGHT GREEN FOR AVAILABLE (SECONDARY), DARK GREEN FOR SELECTED (PRIMARY)
+# 🎨 CLEAN CSS: STRICT CENTER ALIGNMENT FOR ALL MEAL BUTTONS & CARDS
 st.markdown(
     """
     <style>
@@ -201,20 +201,21 @@ st.markdown(
         box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
     }
 
-    /* ===== MEAL SELECTION BUTTONS: SECONDARY (LIGHT GREEN) & PRIMARY (DARK GREEN) ===== */
+    /* ===== MEAL SELECTION BUTTONS: STRICT CENTER ALIGNMENT & COLORS ===== */
     div.row-widget.stButton > button[kind="secondary"], 
     button[data-testid="baseButton-secondary"] {
         background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%) !important;
         border: 2px solid #10B981 !important;
         color: #065F46 !important;
         font-weight: 700 !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
+        text-align: center !important;
+        justify-content: center !important;
+        align-items: center !important;
         padding: 12px 16px !important;
         border-radius: 8px !important;
         margin-bottom: 8px !important;
         width: 100% !important;
-        min-height: 50px !important;
+        min-height: 55px !important;
         height: auto !important;
     }
 
@@ -224,13 +225,14 @@ st.markdown(
         border: 2px solid #064E3B !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
+        text-align: center !important;
+        justify-content: center !important;
+        align-items: center !important;
         padding: 12px 16px !important;
         border-radius: 8px !important;
         margin-bottom: 8px !important;
         width: 100% !important;
-        min-height: 50px !important;
+        min-height: 55px !important;
         height: auto !important;
     }
 
@@ -921,7 +923,7 @@ def render_booking_module():
         is_disabled_logic = True
 
     if is_booked or is_disabled_logic:
-      # 🛑 Booked or Disabled Logic -> Light Red Box
+      # 🛑 Booked or Disabled Logic -> Light Red Box (Center Aligned)
       dis_label = (
           "(બુક થયેલ)"
           if is_booked
@@ -940,7 +942,7 @@ def render_booking_module():
 
       st.markdown(
           f"""
-            <div style="background-color: {bg_col}; border: 2px solid {border_col}; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; text-align: left; opacity: 0.9; width: 100%; min-height: 50px; display: flex; align-items: center; color: {text_col}; font-weight: 700; font-size: 13px;">
+            <div style="background-color: {bg_col}; border: 2px solid {border_col}; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; text-align: center; justify-content: center; align-items: center; opacity: 0.9; width: 100%; min-height: 55px; display: flex; color: {text_col}; font-weight: 700; font-size: 13px;">
                 {box_text}
             </div>
             """,
@@ -955,7 +957,7 @@ def render_booking_module():
       else:
         card_button_text = f"{meal}  |  {status_label}"
 
-      # 🟢 Available = secondary (Light Green), Selected = primary (Dark Green)
+      # 🟢 Available = secondary (Light Green), Selected = primary (Dark Green with Center Alignment)
       if st.button(
           card_button_text,
           key=f"card_btn_{c_idx}",
@@ -1560,7 +1562,7 @@ def render_dashboard_module():
     range_bookings = cursor.fetchall()
     st.info(
         f"📌 {fmt_date(filter_from_date)} થી {fmt_date(filter_to_date)} દરમિયાન"
-        f" કુલကလေး {len(range_bookings)} જમણવાર નોંધાયેલ છે."
+        f" કુલ {len(range_bookings)} જમણવાર નોંધાયેલ છે."
     )
     if range_bookings:
       for b in range_bookings:
