@@ -201,7 +201,7 @@ st.markdown(
         box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
     }
 
-    /* ===== MEAL SELECTION BUTTONS: CENTER ALIGNMENT & COLORS ===== */
+    /* ===== MEAL SELECTION BUTTON्स: CENTER ALIGNMENT & COLORS ===== */
     div.row-widget.stButton > button[kind="secondary"], 
     button[data-testid="baseButton-secondary"] {
         background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%) !important;
@@ -1343,7 +1343,7 @@ def render_inventory_module():
 
 
 # ==========================================
-# 5. લેટર ટાઇપિંગ (Letters) - With Edit & New Options
+# 5. લેટર ટાઇપિંગ (Letters) - No Symbols in Edit
 # ==========================================
 def render_letter_module():
   st.write("#### 📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
@@ -1450,9 +1450,9 @@ def render_letter_module():
               "body_text": l_rec[6],
           }
 
-          # Edit Form for existing letter
+          # Edit Form for existing letter (No Symbols/Arrows)
           with st.expander(
-              "✏️ આ પત્રમાં સુધારો કરો (Edit Letter)", expanded=False
+              "આ પત્રમાં સુધારો કરો (Edit Letter)", expanded=False
           ):
             with st.form(f"edit_letter_form_{sel_l_id}"):
               e_outward = st.text_input(
@@ -1479,7 +1479,7 @@ def render_letter_module():
                   height=180,
               )
 
-              update_btn = st.form_submit_button("🔄 પત્ર અપડેટ કરો")
+              update_btn = st.form_submit_button("પત્ર અપડેટ કરો")
               if update_btn:
                 cursor.execute(
                     """
