@@ -154,7 +154,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS: LIGHT GREEN FOR AVAILABLE, LIGHT RED FOR DISABLED/BOOKED
+# 🎨 CLEAN CSS: LIGHT GREEN FOR AVAILABLE (SECONDARY), DARK GREEN FOR SELECTED (PRIMARY)
 st.markdown(
     """
     <style>
@@ -187,7 +187,6 @@ st.markdown(
     footer, #MainMenu { display: none !important; }
 
     /* ===== STANDARD COMPACT BUTTONS FOR ACTIONS ===== */
-    div.stButton > button, 
     [data-testid="stFormSubmitButton"] > button, 
     [data-testid="stDownloadButton"] > button {
         border-radius: 6px !important;
@@ -200,6 +199,39 @@ st.markdown(
         color: #FFFFFF !important;
         border: 1px solid #047857 !important;
         box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
+    }
+
+    /* ===== MEAL SELECTION BUTTONS: SECONDARY (LIGHT GREEN) & PRIMARY (DARK GREEN) ===== */
+    div.row-widget.stButton > button[kind="secondary"], 
+    button[data-testid="baseButton-secondary"] {
+        background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%) !important;
+        border: 2px solid #10B981 !important;
+        color: #065F46 !important;
+        font-weight: 700 !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
+        min-height: 50px !important;
+        height: auto !important;
+    }
+
+    div.row-widget.stButton > button[kind="primary"], 
+    button[data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+        border: 2px solid #064E3B !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
+        min-height: 50px !important;
+        height: auto !important;
     }
 
     .main .block-container {
@@ -829,7 +861,7 @@ else:
 
 
 # ==========================================
-# ૧. જમણવાર બુકિંગ મોડ્યુલ (Light Red for booked/disabled, Light Green for available, Dark Green for selected)
+# ૧. જમણવાર બુકિંગ મોડ્યુલ
 # ==========================================
 def render_booking_module():
   st.subheader("📅 જમણવાર ઓનલાઈન બુકિંગ")
@@ -923,7 +955,7 @@ def render_booking_module():
       else:
         card_button_text = f"{meal}  |  {status_label}"
 
-      # 🟢 Selected -> Primary (Dark Green), Available -> Secondary (Light Green background via custom CSS / primary status)
+      # 🟢 Available = secondary (Light Green), Selected = primary (Dark Green)
       if st.button(
           card_button_text,
           key=f"card_btn_{c_idx}",
@@ -943,37 +975,6 @@ def render_booking_module():
 
         st.session_state["selected_meals_list"] = current_list
         st.rerun()
-
-  # Custom dynamic styling for available (secondary) vs selected (primary) buttons
-  st.markdown(
-      """
-    <style>
-    div.row-widget.stButton > button[kind="secondary"] {
-        background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%) !important;
-        border: 2px solid #10B981 !important;
-        color: #065F46 !important;
-        font-weight: 700 !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        padding: 12px 16px !important;
-        border-radius: 8px !important;
-        margin-bottom: 8px !important;
-    }
-    div.row-widget.stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-        border: 2px solid #064E3B !important;
-        color: #FFFFFF !important;
-        font-weight: 700 !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        padding: 12px 16px !important;
-        border-radius: 8px !important;
-        margin-bottom: 8px !important;
-    }
-    </style>
-    """,
-      unsafe_allow_html=True,
-  )
 
   selected_meals = [
       m for m in st.session_state["selected_meals_list"] if m not in booked_meals
@@ -1203,7 +1204,7 @@ def render_donation_module():
           ["Cash (રોકડ)", "Online (UPI / QR)", "Bank Transfer"],
       )
       d_utr = st.text_input(
-          "UTR / Receipt No (ઓપ્શનલ)", placeholder="ઓપ્શનల్ Ref ID"
+          "UTR / Receipt No (ઓપ્શનલ)", placeholder="ઓપ્શનલ Ref ID"
       )
 
     submit_d = st.form_submit_button("💾 દાન સેવ કરો")
@@ -1559,7 +1560,7 @@ def render_dashboard_module():
     range_bookings = cursor.fetchall()
     st.info(
         f"📌 {fmt_date(filter_from_date)} થી {fmt_date(filter_to_date)} દરમિયાન"
-        f" કુલ {len(range_bookings)} જમણવાર નોંધાયેલ છે."
+        f" કુલကလေး {len(range_bookings)} જમણવાર નોંધાયેલ છે."
     )
     if range_bookings:
       for b in range_bookings:
