@@ -13,6 +13,20 @@ from reportlab.lib.pagesizes import A6
 from reportlab.pdfgen import canvas
 
 # ==========================================
+# ⚙️ FORCE LIGHT MODE CONFIG (FIXES BLACK BACKGROUND ON ANDROID/WINDOWS)
+# ==========================================
+try:
+  os.makedirs(".streamlit", exist_ok=True)
+  config_path = os.path.join(".streamlit", "config.toml")
+  if not os.path.exists(config_path):
+    with open(config_path, "w") as f:
+      f.write(
+          "[theme]\nbase=\"light\"\nprimaryColor=\"#059669\"\nbackgroundColor=\"#FFFFFF\"\nsecondaryBackgroundColor=\"#F3F4F6\"\ntextColor=\"#111827\"\nfont=\"sans serif\"\n"
+      )
+except Exception:
+  pass
+
+# ==========================================
 # DATABASE SETUP (SQLite)
 # ==========================================
 conn = sqlite3.connect("ngo_master.db", check_same_thread=False)
@@ -27,6 +41,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_date TEXT,
     meal_types TEXT,
     meal_prep_type TEXT,
+    occasion TEXT,
     amount REAL,
     payment_status TEXT,
     payment_type TEXT,
@@ -34,6 +49,13 @@ CREATE TABLE IF NOT EXISTS bookings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 """)
+
+# Safe migration for existing database to add 'occasion' column if missing
+try:
+  cursor.execute("ALTER TABLE bookings ADD COLUMN occasion TEXT")
+  conn.commit()
+except Exception:
+  pass
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS donations (
@@ -154,7 +176,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS: STRICT CENTER ALIGNMENT & COLORS
+# 🎨 CLEAN CSS: STRICT CENTER ALIGNMENT & FIXED THEMES
 st.markdown(
     """
     <style>
@@ -339,7 +361,7 @@ def auto_save_image_to_folder(booking_info):
     )
     file_path = os.path.join(RECEIPTS_DIR, filename)
 
-    img_width, img_height = 800, 1100
+    img_width, img_height = 800, 1150
     image = Image.new("RGB", (img_width, img_height), color="white")
     draw = ImageDraw.Draw(image)
 
@@ -371,6 +393,7 @@ def auto_save_image_to_folder(booking_info):
         ("મોબાઈલ / Mobile:", str(booking_info["phone"])),
         ("સેવા નામ / Service:", str(booking_info["service_for_name"])),
         ("જમણવાર તારીખ:", fmt_date(booking_info["booking_date"])),
+        ("નિમિત્ત / Occasion:", str(booking_info.get("occasion", "N/A"))),
         ("જમણવાર / Meal:", str(booking_info["meal_types"])),
         ("પ્રકાર / Prep Type:", str(booking_info["meal_prep_type"])),
         ("રકમ / Amount:", f"Rs. {booking_info['amount']:,.2f}"),
@@ -383,7 +406,7 @@ def auto_save_image_to_folder(booking_info):
     for label, val in details:
       draw.text((50, y), label, fill="#1e3a8a", font=font_med)
       draw.text((320, y), val, fill="#111827", font=font_small)
-      y += 50
+      y += 48
 
     draw.line(
         [40, img_height - 120, img_width - 40, img_height - 120],
@@ -542,6 +565,7 @@ def render_html_receipt(booking_info):
             <div class="row"><span class="label">મોબાઈલ / Mobile:</span><span class="value">{booking_info['phone']}</span></div>
             <div class="row"><span class="label">સેવા નામ / Service For:</span><span class="value">{booking_info['service_for_name']}</span></div>
             <div class="row"><span class="label">જમણવાર તારીખ:</span><span class="value">{fmt_date(booking_info['booking_date'])}</span></div>
+            <div class="row"><span class="label">નિમિત્ત / Occasion:</span><span class="value">{booking_info.get('occasion', 'N/A')}</span></div>
             <div class="row"><span class="label">જમણવાર / Meal:</span><span class="value">{booking_info['meal_types']}</span></div>
             <div class="row"><span class="label">પ્રકાર / Prep Type:</span><span class="value">{booking_info['meal_prep_type']}</span></div>
             <div class="row total-row"><span>રકમ / Amount:</span><span>₹ {booking_info['amount']:,.2f}</span></div>
@@ -1033,6 +1057,12 @@ def render_booking_module():
           else ""
       )
 
+    meal_occasion = st.text_input(
+        "૭. જમણવારનું નિમિત્ત (Occasion) *",
+        placeholder="દા.ત. જન્મદિન નિમિત્તે / પુણ્યતિથિ",
+        key="meal_occasion_input",
+    )
+
     payment_status = "Yes (આવી ગયેલ છે)"
     payment_type = "Cash (રોકડ)"
     utr_number = "N/A"
@@ -1083,15 +1113,18 @@ def render_booking_module():
     save_btn = st.button("💾 બુકિંગ સેવ કરો", type="primary", key="save_booking")
 
     if save_btn:
-      if not raw_donor_name or not donor_phone:
-        st.error("❌ કૃપા કરીને દાતાશ્રીનું નામ અને મોબાઈલ નંબર દાખલ કરો.")
+      if not raw_donor_name or not donor_phone or not meal_occasion:
+        st.error(
+            "❌ કૃપા કરીને દાતાશ્રીનું નામ, મોબાઈલ નંબર અને જમણવારનું નિમિત્ત"
+            " અવશ્ય ભરો."
+        )
       else:
         meals_str = ", ".join(selected_meals)
 
         cursor.execute(
             """
-                INSERT INTO bookings (donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount, payment_status, payment_type, utr_number)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO bookings (donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, occasion, amount, payment_status, payment_type, utr_number)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 donor_name,
@@ -1100,6 +1133,7 @@ def render_booking_module():
                 date_str,
                 meals_str,
                 meal_prep_type,
+                meal_occasion.upper(),
                 final_amount,
                 payment_status,
                 payment_type,
@@ -1120,6 +1154,7 @@ def render_booking_module():
             "booking_date": date_str,
             "meal_types": meals_str,
             "meal_prep_type": meal_prep_type,
+            "occasion": meal_occasion.upper(),
             "amount": final_amount,
             "payment_status": payment_status,
             "payment_type": payment_type,
@@ -1138,6 +1173,7 @@ def render_booking_module():
             f"👤 દાતાશ્રી: {donor_name}%0A"
             f"🙏 સેવા નામ: {service_for_name}%0A"
             f"📅 તારીખ: {fmt_date(date_str)}%0A"
+            f"🎁 નિમિત્ત: {meal_occasion.upper()}%0A"
             f"🍲 જમણવાર: {meals_str}%0A"
             f"🥣 પ્રકાર: {meal_prep_type}%0A"
             f"💰 રકમ: ₹{final_amount}%0A"
@@ -1343,7 +1379,7 @@ def render_inventory_module():
 
 
 # ==========================================
-# 5. લેટર ટાઇપિંગ (Letters) - Clean Edit Button Flow
+# 5. લેટર ટાઇપિંગ (Letters) - Clean Edit Flow
 # ==========================================
 def render_letter_module():
   st.write("#### 📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
@@ -1560,7 +1596,7 @@ def render_dashboard_module():
   for ud in upcoming_dates:
     cursor.execute(
         """
-            SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, amount, payment_status 
+            SELECT id, donor_name, phone, service_for_name, meal_types, meal_prep_type, occasion, amount, payment_status 
             FROM bookings WHERE booking_date = ?
         """,
         (ud,),
@@ -1572,7 +1608,7 @@ def render_dashboard_module():
 
     if ud_bookings:
       for b in ud_bookings:
-        b_id, b_donor, b_phone, b_service, b_meal, b_prep, b_amt, b_pstat = (
+        b_id, b_donor, b_phone, b_service, b_meal, b_prep, b_occ, b_amt, b_pstat = (
             b[0],
             b[1],
             b[2],
@@ -1581,12 +1617,14 @@ def render_dashboard_module():
             b[5],
             b[6],
             b[7],
+            b[8],
         )
         col_info, col_w_btn = st.columns([4, 1])
         with col_info:
           st.markdown(
-              f"📌 **#{b_id}** | દાતા: **{b_donor}** | સેવા: **{b_service}** |"
-              f" જમણવાર: {b_meal} | ₹{b_amt:,.2f} | Pay: {b_pstat}"
+              f"📌 **#{b_id}** | દાતા: **{b_donor}** | નિમિત્ત: **{b_occ}** | સેવા:"
+              f" **{b_service}** | જમણવાર: {b_meal} | ₹{b_amt:,.2f} | Pay:"
+              f" {b_pstat}"
           )
         with col_w_btn:
           clean_p = "".join(c for c in str(b_phone) if c.isdigit())
@@ -1594,7 +1632,8 @@ def render_dashboard_module():
             clean_p = "91" + clean_p
           w_text = (
               f"નમસ્તે {b_donor}, NARMADESHWAR TRUST માં આપના {b_meal}"
-              f" બુકિંગ (તારીખ: {fmt_date(ud)}) બદલ આભાર! રકમ: ₹{b_amt:,.2f}"
+              f" બુકિંગ ({b_occ}, તારીખ: {fmt_date(ud)}) બદલ આભાર! રકમ:"
+              f" ₹{b_amt:,.2f}"
           )
           w_link = f"https://api.whatsapp.com/send?phone={clean_p}&text={urllib.parse.quote(w_text)}"
           st.markdown(
@@ -1623,7 +1662,7 @@ def render_dashboard_module():
   if filter_from_date <= filter_to_date:
     cursor.execute(
         """
-            SELECT id, donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, amount 
+            SELECT id, donor_name, phone, service_for_name, booking_date, meal_types, meal_prep_type, occasion, amount 
             FROM bookings WHERE booking_date BETWEEN ? AND ? ORDER BY booking_date ASC
         """,
         (str(filter_from_date), str(filter_to_date)),
@@ -1635,7 +1674,7 @@ def render_dashboard_module():
     )
     if range_bookings:
       for b in range_bookings:
-        b_id, b_donor, b_phone, b_service, b_date, b_meal, b_prep, b_amt = (
+        b_id, b_donor, b_phone, b_service, b_date, b_meal, b_prep, b_occ, b_amt = (
             b[0],
             b[1],
             b[2],
@@ -1644,12 +1683,13 @@ def render_dashboard_module():
             b[5],
             b[6],
             b[7],
+            b[8],
         )
         col_info, col_w_btn = st.columns([4, 1])
         with col_info:
           st.markdown(
               f"📅 **{fmt_date(b_date)}** | #{b_id} | દાતા: **{b_donor}** |"
-              f" જમણવાર: {b_meal} | ₹{b_amt:,.2f}"
+              f" નિમિત્ત: **{b_occ}** | જમણવાર: {b_meal} | ₹{b_amt:,.2f}"
           )
         with col_w_btn:
           clean_p = "".join(c for c in str(b_phone) if c.isdigit())
@@ -1694,7 +1734,7 @@ def render_dashboard_module():
       if sel_b_id:
         cursor.execute(
             "SELECT id, donor_name, phone, service_for_name, booking_date,"
-            " meal_types, meal_prep_type, amount, payment_status,"
+            " meal_types, meal_prep_type, occasion, amount, payment_status,"
             " payment_type FROM bookings WHERE id = ?",
             (sel_b_id,),
         )
@@ -1708,12 +1748,13 @@ def render_dashboard_module():
               "booking_date": rec[4],
               "meal_types": rec[5],
               "meal_prep_type": rec[6],
-              "amount": rec[7],
-              "payment_status": rec[8],
-              "payment_type": rec[9],
+              "occasion": rec[7],
+              "amount": rec[8],
+              "payment_status": rec[9],
+              "payment_type": rec[10],
           }
 
-          if "No" in str(rec[8]):
+          if "No" in str(rec[9]):
             st.warning("⚠️ આ બુકિંગનું પેમેન્ટ હજુ બાકી (Pending) છે.")
             if st.button(
                 "💰 પેમેન્ટ ચૂકતે કરો (Mark as Paid)", key=f"mark_paid_{sel_b_id}"
@@ -1767,10 +1808,10 @@ def render_dashboard_module():
     st.write("### 📋 સંપૂર્ણ બુકિંગ યાદી અને Excel ડાઉનલોડ")
     df_b = pd.read_sql_query(
         "SELECT id, donor_name AS 'દાતાશ્રી', service_for_name AS 'જેમના નામે"
-        " સેવા', phone AS 'મોબાઈલ', booking_date AS 'તારીખ', meal_types AS"
-        " 'જમણવાર', meal_prep_type AS 'પ્રકાર', amount AS 'રકમ (₹)',"
-        " payment_status AS 'Pay Status', payment_type AS 'Pay Type' FROM"
-        " bookings ORDER BY id DESC",
+        " સેવા', occasion AS 'નિમિત્ત', phone AS 'મોબાઈલ', booking_date AS"
+        " 'તારીખ', meal_types AS 'જમણવાર', meal_prep_type AS 'પ્રકાર', amount AS"
+        " 'રકમ (₹)', payment_status AS 'Pay Status', payment_type AS 'Pay Type'"
+        " FROM bookings ORDER BY id DESC",
         conn,
     )
     if not df_b.empty and "તારીખ" in df_b.columns:
