@@ -154,7 +154,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 🎨 CLEAN CSS: STRICT CENTER ALIGNMENT FOR ALL MEAL BUTTONS & CARDS
+# 🎨 CLEAN CSS: STRICT CENTER ALIGNMENT & COLORS
 st.markdown(
     """
     <style>
@@ -201,7 +201,7 @@ st.markdown(
         box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
     }
 
-    /* ===== MEAL SELECTION BUTTONS: STRICT CENTER ALIGNMENT & COLORS ===== */
+    /* ===== MEAL SELECTION BUTTONS: CENTER ALIGNMENT & COLORS ===== */
     div.row-widget.stButton > button[kind="secondary"], 
     button[data-testid="baseButton-secondary"] {
         background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%) !important;
@@ -923,7 +923,6 @@ def render_booking_module():
         is_disabled_logic = True
 
     if is_booked or is_disabled_logic:
-      # 🛑 Booked or Disabled Logic -> Light Red Box (Center Aligned)
       dis_label = (
           "(બુક થયેલ)"
           if is_booked
@@ -957,7 +956,6 @@ def render_booking_module():
       else:
         card_button_text = f"{meal}  |  {status_label}"
 
-      # 🟢 Available = secondary (Light Green), Selected = primary (Dark Green with Center Alignment)
       if st.button(
           card_button_text,
           key=f"card_btn_{c_idx}",
@@ -1345,13 +1343,14 @@ def render_inventory_module():
 
 
 # ==========================================
-# 5. લેટર ટાઇપિંગ (Letters)
+# 5. લેટર ટાઇપિંગ (Letters) - With Edit & New Options
 # ==========================================
 def render_letter_module():
   st.write("#### 📜 સત્તાવાર પત્ર (Letter) ટાઇપિંગ અને જાવક વ્યવસ્થાપન")
   tab_L1, tab_L2 = st.tabs(
-      ["✍️ નવો પત્ર બનાવો", "📂 જૂના પત્રોનું લિસ્ટ (Index) & એડિટ"]
+      ["✍️ નવો પત્ર બનાવો", "📂 જૂના પત્રોનું લિસ્ટ (Index) & પ્રિન્ટ / એડિટ"]
   )
+
   with tab_L1:
     with st.form("letter_form", clear_on_submit=True):
       col_l1, col_l2, col_l3 = st.columns(3)
@@ -1415,7 +1414,7 @@ def render_letter_module():
           render_html_letter(letter_dict)
 
   with tab_L2:
-    st.write("##### 📂 સેવ થયેલા તમામ પત્રોનું ઇન્ડેક્સ (Index)")
+    st.write("##### 📂 સેવ થયેલા તમામ પત્રોનું ઇન્ડેક્સ (Index) & એડિટ")
     cursor.execute(
         "SELECT id, outward_no, ref_no, letter_date, recipient, subject FROM"
         " letters ORDER BY id DESC"
@@ -1429,8 +1428,10 @@ def render_letter_module():
       selected_l_label = st.selectbox(
           "પ્રિન્ટ અથવા એડિટ કરવા માટે પત્ર પસંદ કરો:",
           list(letter_options.keys()),
+          key="select_old_letter",
       )
       sel_l_id = letter_options[selected_l_label]
+
       if sel_l_id:
         cursor.execute(
             "SELECT id, outward_no, ref_no, letter_date, recipient, subject,"
@@ -1448,6 +1449,60 @@ def render_letter_module():
               "subject": l_rec[5],
               "body_text": l_rec[6],
           }
+
+          # Edit Form for existing letter
+          with st.expander(
+              "✏️ આ પત્રમાં સુધારો કરો (Edit Letter)", expanded=False
+          ):
+            with st.form(f"edit_letter_form_{sel_l_id}"):
+              e_outward = st.text_input(
+                  "જાવક નંબર (Outward No.)", value=l_dict["outward_no"]
+              )
+              e_ref = st.text_input(
+                  "સંદર્ભ નંબર (Ref No.)", value=l_dict["ref_no"]
+              )
+              try:
+                parsed_dt = datetime.strptime(
+                    l_dict["letter_date"], "%Y-%m-%d"
+                ).date()
+              except:
+                parsed_dt = date.today()
+              e_date = st.date_input("પત્રની તારીખ", value=parsed_dt)
+
+              e_recipient = st.text_area(
+                  "પ્રતિ (Recipient Address)", value=l_dict["recipient"]
+              )
+              e_subject = st.text_input("વિષય (Subject)", value=l_dict["subject"])
+              e_body = st.text_area(
+                  "પત્રનું મુખ્ય લખાણ (Body Text)",
+                  value=l_dict["body_text"],
+                  height=180,
+              )
+
+              update_btn = st.form_submit_button("🔄 પત્ર અપડેટ કરો")
+              if update_btn:
+                cursor.execute(
+                    """
+                                    UPDATE letters 
+                                    SET outward_no = ?, ref_no = ?, letter_date = ?, recipient = ?, subject = ?, body_text = ?
+                                    WHERE id = ?
+                                """,
+                    (
+                        e_outward.upper(),
+                        e_ref.upper(),
+                        str(e_date),
+                        e_recipient,
+                        e_subject,
+                        e_body,
+                        sel_l_id,
+                    ),
+                )
+                conn.commit()
+                st.success("✅ પત્ર સફળતાપૂર્વક અપડેટ થઈ ગયો!")
+                st.rerun()
+
+          st.markdown("---")
+          st.write("##### 🖨️ પત્ર પ્રિન્ટ પ્રીવ્યુ:")
           render_html_letter(l_dict)
     else:
       st.info("હજુ સુધી કોઈ પત્ર સેવ કરવામાં આવ્યો નથી.")
